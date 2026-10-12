@@ -8,6 +8,7 @@ import { ArrowRight } from "lucide-react"
 import { Poppins } from "next/font/google"
 import { supabase } from "@/lib/supabaseClient"
 import { EASE_OUT } from "@/lib/motion"
+import { DomainsSection } from "@/components/DomainsSection"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500"] })
 
@@ -124,6 +125,7 @@ export default function Home() {
         <p className="mb-8 text-sm text-muted-foreground">About</p>
         <Statement text="Embrione is the technical vertical of the Department of Computer Science and Engineering at PES University. We question ideas, explore possibilities, and push the boundaries of technology." />
       </section>
+      <DomainsSection />
     </div>
   )
 }
