@@ -9,10 +9,9 @@ import { Poppins } from "next/font/google"
 import { supabase } from "@/lib/supabaseClient"
 import { EASE_OUT } from "@/lib/motion"
 import { DomainsSection } from "@/components/DomainsSection"
+import { siteConfig } from "@/lib/siteConfig"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500"] })
-
-const domains = ["Web Development", "Design", "Logistics", "Operations", "Sponsorship", "Hospitality", "Social Media", "Event Management"]
 
 const rise = (i: number) => ({
   initial: { opacity: 0, y: 12 },
@@ -20,7 +19,6 @@ const rise = (i: number) => ({
   transition: { duration: 0.3, delay: i * 0.05, ease: EASE_OUT },
 })
 
-// One word of the scroll statement: fades from dim to bright as you scroll past it.
 function Word({ children, range, progress }: { children: string; range: [number, number]; progress: MotionValue<number> }) {
   const opacity = useTransform(progress, range, [0.2, 1])
   return (
@@ -63,12 +61,12 @@ export default function Home() {
   return (
     <div className="overflow-x-clip">
       <section className={`${poppins.className} mx-auto flex min-h-[calc(100svh-3rem)] max-w-6xl flex-col justify-end px-6 pb-14 pt-24`}>
-        <motion.p {...rise(0)} className="text-4xl font-light sm:text-4xl">
-          The
+        <motion.p {...rise(0)} className="text-xl font-light text-muted-foreground sm:text-2xl">
+          Verified Directory of
         </motion.p>
 
-        <h1 aria-label="Embrione" className="-mt-1 flex text-[clamp(2.75rem,10vw,8rem)] font-normal leading-[0.95] tracking-tight">
-          {"Embrione".split("").map((ch, i) => (
+        <h1 aria-label={siteConfig.name} className="-mt-1 flex text-[clamp(2.5rem,9vw,7.5rem)] font-normal leading-[0.95] tracking-tight">
+          {siteConfig.name.split("").map((ch, i) => (
             <motion.span
               key={i}
               aria-hidden
@@ -82,8 +80,8 @@ export default function Home() {
           ))}
         </h1>
 
-        <motion.p {...rise(9)} className="mt-4 max-w-2xl text-base sm:text-xl">
-          Tech vertical under CSE department, PES University
+        <motion.p {...rise(9)} className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-xl">
+          {siteConfig.tagline}
         </motion.p>
 
         <div className="mt-12 flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
@@ -93,18 +91,18 @@ export default function Home() {
                 href="/register"
                 className="btn-sweep press inline-block rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background hover:scale-[1.04] active:scale-[0.95]"
               >
-                Join the team
+                Claim Your Card
               </Link>
             </MagneticButton>
             <Link href="/team" className="group inline-flex items-center gap-1.5 text-sm text-foreground/80 transition-colors hover:text-foreground">
-              Meet the team
+              Explore Roster
               <ArrowRight className="size-4 transition-[translate,color] duration-200 ease-out group-hover:translate-x-1.5 group-hover:text-[oklch(0.78_0.16_55)]" />
             </Link>
           </motion.div>
 
           <motion.div {...rise(12)} className="md:text-right">
             <p className="text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">{count ?? "–"}</p>
-            <p className="mt-1 text-sm text-muted-foreground">members and counting</p>
+            <p className="mt-1 text-sm text-muted-foreground">verified builders & counting</p>
           </motion.div>
         </div>
       </section>
@@ -112,7 +110,7 @@ export default function Home() {
       {/* Tilted domain strip */}
       <div className="-rotate-1 border-y border-white/10 py-5">
         <div className="marquee flex w-max gap-12 text-2xl font-medium tracking-tight text-foreground/70 sm:text-3xl">
-          {[...domains, ...domains].map((d, i) => (
+          {[...siteConfig.domains, ...siteConfig.domains].map((d, i) => (
             <span key={i} className="whitespace-nowrap">
               {d} <span className="ml-12 text-[oklch(0.78_0.16_55)]">✦</span>
             </span>
@@ -122,8 +120,8 @@ export default function Home() {
 
       {/* Scroll-reveal statement */}
       <section className="mx-auto max-w-6xl px-6 py-32 md:py-48">
-        <p className="mb-8 text-sm text-muted-foreground">About</p>
-        <Statement text="Embrione is the technical vertical of the Department of Computer Science and Engineering at PES University. We question ideas, explore possibilities, and push the boundaries of technology." />
+        <p className="mb-8 text-sm text-muted-foreground">About the platform</p>
+        <Statement text="CraftRoster connects top-tier engineers, designers, and creators worldwide. Build your custom profile card, submit for verification, and get discovered by teams looking for world-class talent." />
       </section>
       <DomainsSection />
     </div>

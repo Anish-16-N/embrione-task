@@ -33,7 +33,9 @@ const EMPTY = {
   semester: "",
   bio: "",
 }
-
+// Matches e.g. PES1UG23CS001 and PES2UG24AM123
+const SRN_PATTERN = /^PES[12]UG\d{2}[A-Z]{2}\d{3}$/
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Makes "github.com/me" into "https://github.com/me" so the link works when clicked.
 const normalizeUrl = (value: string) => {
   const t = value.trim()
@@ -106,6 +108,7 @@ export default function RegisterPage() {
   const [processing, setProcessing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [errors, setErrors] = useState<{ srn?: string; email?: string }>({})
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewRef = useRef<string | null>(null)
@@ -603,8 +606,7 @@ export default function RegisterPage() {
                     />
 
                     <p
-                      className={`text-right text-xs transition-colors ${bioOk ? "text-primary" : "text-muted-foreground"
-                        }`}
+                      className={`text-right text-xs transition-colors ${bioOk ? "text-primary" : "text-muted-foreground"}`}
                     >
                       {bioLength}/{BIO_MAX} characters (minimum {BIO_MIN})
                     </p>
@@ -690,8 +692,7 @@ export default function RegisterPage() {
               className="h-full w-full origin-left rounded-full bg-primary"
               initial={false}
               animate={{ scaleX: percent / 100 }}
-              transition={{ duration: 0.25, ease: EASE_OUT }
-              }
+              transition={{ duration: 0.25, ease: EASE_OUT }}
             />
           </div>
           <motion.div
