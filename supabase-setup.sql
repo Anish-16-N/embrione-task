@@ -16,13 +16,23 @@ create table public.members (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Quick policy to allow public inserts & reading
-alter table public.members enable row level security;
+-- Enable row-level security
+ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
 
-create policy "Allow public insert" on public.members for insert with check (true);
-create policy "Allow public read" on public.members for select using (true);
-create policy "Allow admin updates" on public.members for update using (true);
-create policy "Allow admin deletes" on public.members for delete using (true);
+-- Remove unsafe policies
+DROP POLICY IF EXISTS "Allow public insert" ON public.members;
+DROP POLICY IF EXISTS "Allow public read" ON public.members;
+DROP POLICY IF EXISTS "Allow admin updates" ON public.members;
+DROP POLICY IF EXISTS "Allow admin deletes" ON public.members;
+DROP POLICY IF EXISTS "Allow pending member registration" ON public.members;
+
+-- Allow registration only with pending status
+CREATE POLICY "Allow pending member registration"
+ON public.members
+FOR INSERT
+TO anon
+WITH CHECK (status = 'pending');
+
 
 -- 2. Seed Mock Data
 insert into public.members (name, domain, position, srn, email, linkedin_url, github_url, branch, semester, bio, photo_url, status)

@@ -1,33 +1,26 @@
-// Shared options and the Member type (options come from the challenge PDF).
-export const DOMAINS = ['Web Development', 'Design', 'Logistics', 'Operations', 'Sponsorship', 'Hospitality', 'Social Media', 'Event Management']
-export const POSITIONS = ['Head', 'Vice-Head', 'Core Member', 'Member']
-export const BRANCHES = ['CSE', 'AIML', 'ECE', 'EEE', 'ME', 'Biotech']
-export const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8']
+// src/lib/types.ts
+import { siteConfig } from "./siteConfig"
 
-export const BIO_MIN = 150
-export const BIO_MAX = 200
+export const BIO_MIN = 20
+export const BIO_MAX = 240
+
+export const DOMAINS = siteConfig.domains
+export const POSITIONS = siteConfig.roles
 
 export type Member = {
     id: string
     name: string
     domain: string
     position: string
-    srn: string
+    srn: string // Stores @handle
     email: string
-    linkedin_url: string | null
-    github_url: string | null
-    branch: string
-    semester: number
-    bio: string | null
+    linkedin_url?: string | null
+    github_url?: string | null
+    portfolio_url?: string | null
+    branch: string // Stores Primary Skills / Headline
+    semester: number // Stores Years of Experience
+    bio: string
     photo_url: string
-    status: 'pending' | 'approved' | 'rejected'
+    status: "pending" | "approved" | "rejected"
     created_at: string
-}
-
-// Heads first, then Vice-Heads, and so on (used to sort the /team page).
-export const POSITION_ORDER: Record<string, number> = {
-    Head: 0,
-    'Vice-Head': 1,
-    'Core Member': 2,
-    Member: 3,
 }
