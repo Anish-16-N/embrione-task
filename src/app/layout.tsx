@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main>{children}</main>
         <footer className="border-t border-white/10 py-12 text-center text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} {siteConfig.name}. All rights reserved.</p>
+          <p>© 2026 {siteConfig.name}. All rights reserved.</p>
         </footer>
         <Toaster position="bottom-right" richColors />
       </body>
