@@ -25,21 +25,24 @@ export default function Navbar() {
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: EASE_OUT }}
-      className="sticky top-3 z-50 mx-auto w-full max-w-4xl px-3 sm:top-4 sm:px-4"
+      className="sticky top-3 z-50 mx-auto w-full max-w-4xl px-2.5 sm:top-4 sm:px-4"
     >
-      <div className="flex h-12 w-full items-center justify-between gap-1 rounded-full border border-white/12 bg-zinc-950/85 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:h-14 sm:gap-3 sm:px-3 sm:pl-5">
-        {/* Brand Logo: Icon on mobile, Icon + Brand Name on laptop/tablet */}
-        <Link href="/" className="group flex shrink-0 items-center gap-2 pl-0.5 sm:pl-0">
+      <div className="mx-auto flex h-12 w-full max-w-full items-center justify-between gap-1 overflow-hidden rounded-full border border-white/12 bg-zinc-950/85 px-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:h-14 sm:gap-3 sm:px-3 sm:pl-5">
+        {/* Left Brand Logo */}
+        <Link
+          href="/"
+          className="group flex shrink-0 items-center gap-2 pl-0.5 sm:pl-0"
+        >
           <span className="relative grid size-7 place-items-center rounded-full bg-gradient-to-tr from-indigo-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-transform duration-200 group-hover:scale-105">
             <Sparkles className="size-3.5" />
           </span>
-          <span className="hidden text-sm font-semibold tracking-tight text-white sm:inline">
+          <span className="hidden text-sm font-semibold tracking-tight text-white md:inline">
             {siteConfig.name}
           </span>
         </Link>
 
         {/* Center Navigation Pills */}
-        <nav className="flex shrink-0 items-center gap-0.5 rounded-full border border-white/5 bg-white/[0.03] p-0.5 sm:gap-1 sm:p-1">
+        <nav className="flex min-w-0 shrink items-center gap-0.5 rounded-full border border-white/5 bg-white/[0.03] p-0.5 sm:gap-1 sm:p-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -64,13 +67,13 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Right Actions: Spotlight Search + Claim Card */}
+        {/* Right Actions: Spotlight Search + Claim Button */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={openCommandMenu}
             aria-label="Search roster"
-            className="inline-flex size-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-xs text-zinc-300 transition-colors hover:border-violet-500/40 hover:bg-white/[0.08] hover:text-white sm:size-auto sm:gap-2 sm:px-3 sm:py-1.5"
+            className="inline-flex size-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-xs text-zinc-300 transition-colors hover:border-violet-500/40 hover:bg-white/[0.08] hover:text-white sm:size-auto sm:gap-2 sm:px-3 sm:py-1.5"
           >
             <Search className="size-3.5 text-violet-400" />
             <span className="hidden sm:inline">Search</span>
@@ -83,10 +86,9 @@ export default function Navbar() {
             href="/register"
             className="group relative inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white px-2.5 py-1.5 text-[11px] font-semibold text-zinc-950 transition-all duration-200 hover:scale-[1.03] hover:bg-zinc-100 active:scale-[0.97] sm:gap-1.5 sm:px-4 sm:py-2 sm:text-xs"
           >
-            <span>
-              Claim<span className="hidden sm:inline"> Card</span>
-            </span>
-            <ArrowUpRight className="size-3 sm:size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            <span className="sm:hidden">Claim</span>
+            <span className="hidden sm:inline">Claim Card</span>
+            <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 sm:size-3.5" />
           </Link>
         </div>
       </div>
