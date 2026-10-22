@@ -1,4 +1,5 @@
 // src/lib/showcaseProfiles.ts
+import { siteConfig } from "./siteConfig"
 import type { Member } from "./types"
 
 export const SHOWCASE_PROFILES: Member[] = [
@@ -111,3 +112,17 @@ export const SHOWCASE_PROFILES: Member[] = [
         created_at: "2026-10-10T10:00:00Z",
     },
 ]
+
+const VALID_DOMAINS = new Set<string>(siteConfig.domains)
+const VALID_ROLES = new Set<string>(siteConfig.roles)
+
+/**
+ * Filters out any legacy profiles whose domain or position (e.g. "Head", "Vice-Head", "Hospitality")
+ * does not match CraftRoster's official categories and roles.
+ */
+export function filterValidCraftRosterMembers(rows: Member[]): Member[] {
+    const valid = rows.filter(
+        (m) => VALID_DOMAINS.has(m.domain) && VALID_ROLES.has(m.position)
+    )
+    return valid.length > 0 ? valid : SHOWCASE_PROFILES
+}

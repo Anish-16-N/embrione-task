@@ -2,12 +2,13 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { motion } from "motion/react"
 
 export default function InteractiveBackground() {
-    const glowRef = useRef<HTMLDivElement>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const el = glowRef.current
+        const el = containerRef.current
         if (!el) return
 
         const handleMove = (e: PointerEvent) => {
@@ -21,42 +22,129 @@ export default function InteractiveBackground() {
 
     return (
         <div
-            ref={glowRef}
+            ref={containerRef}
             aria-hidden
-            className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#06070b]"
+            className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#05060b]"
             style={
                 {
                     "--mx": "50vw",
-                    "--my": "30vh",
+                    "--my": "35vh",
                 } as React.CSSProperties
             }
         >
-            {/* Ambient top aurora beams */}
-            <div className="absolute -top-48 left-1/2 h-[520px] w-[980px] -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-600/20 via-violet-600/20 to-cyan-500/15 blur-[130px]" />
-            <div className="absolute top-[35%] -left-40 h-[400px] w-[400px] rounded-full bg-violet-600/10 blur-[120px]" />
-            <div className="absolute top-[65%] -right-40 h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-[120px]" />
+            {/* Dynamic Drifting Aurora Orb 1 - Electric Violet */}
+            <motion.div
+                animate={{
+                    x: ["-10%", "15%", "-5%", "-10%"],
+                    y: ["-5%", "12%", "-8%", "-5%"],
+                    scale: [1, 1.18, 0.94, 1],
+                }}
+                transition={{
+                    duration: 18,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+                className="absolute -top-36 left-[15%] h-[520px] w-[520px] rounded-full bg-violet-600/25 blur-[135px]"
+            />
 
-            {/* Interactive mouse-following spotlight */}
+            {/* Dynamic Drifting Aurora Orb 2 - Cyber Cyan */}
+            <motion.div
+                animate={{
+                    x: ["10%", "-18%", "8%", "10%"],
+                    y: ["5%", "-14%", "10%", "5%"],
+                    scale: [1, 0.9, 1.15, 1],
+                }}
+                transition={{
+                    duration: 22,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+                className="absolute top-[18%] right-[10%] h-[460px] w-[460px] rounded-full bg-cyan-500/20 blur-[135px]"
+            />
+
+            {/* Dynamic Drifting Aurora Orb 3 - Deep Indigo */}
+            <motion.div
+                animate={{
+                    x: ["-8%", "12%", "-12%", "-8%"],
+                    y: ["10%", "-10%", "6%", "10%"],
+                    scale: [1.05, 0.92, 1.12, 1.05],
+                }}
+                transition={{
+                    duration: 25,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+                className="absolute bottom-[-10%] left-[30%] h-[500px] w-[640px] rounded-full bg-indigo-600/20 blur-[140px]"
+            />
+
+            {/* Base architectural perspective grid */}
             <div
-                className="absolute inset-0 transition-opacity duration-300"
+                className="absolute inset-0 opacity-[0.16]"
                 style={{
-                    background:
-                        "radial-gradient(600px circle at var(--mx) var(--my), rgba(139, 92, 246, 0.13), transparent 70%)",
+                    backgroundImage: `
+            linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px)
+          `,
+                    backgroundSize: "56px 56px",
+                    maskImage:
+                        "radial-gradient(ellipse 85% 65% at 50% 30%, black 30%, transparent 100%)",
+                    WebkitMaskImage:
+                        "radial-gradient(ellipse 85% 65% at 50% 30%, black 30%, transparent 100%)",
                 }}
             />
 
-            {/* Crisp dot matrix with radial fade mask */}
+            {/* Cursor-reactive bright dot matrix reveal */}
             <div
-                className="absolute inset-0 opacity-30"
+                className="absolute inset-0"
                 style={{
                     backgroundImage:
-                        "radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px)",
+                        "radial-gradient(rgba(167, 139, 250, 0.75) 1.25px, transparent 1.25px)",
                     backgroundSize: "28px 28px",
                     maskImage:
-                        "radial-gradient(ellipse 80% 70% at 50% 35%, black 40%, transparent 100%)",
+                        "radial-gradient(380px circle at var(--mx) var(--my), black 0%, transparent 100%)",
                     WebkitMaskImage:
-                        "radial-gradient(ellipse 80% 70% at 50% 35%, black 40%, transparent 100%)",
+                        "radial-gradient(380px circle at var(--mx) var(--my), black 0%, transparent 100%)",
                 }}
+            />
+
+            {/* Cursor-following ambient glow */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    background:
+                        "radial-gradient(650px circle at var(--mx) var(--my), rgba(139, 92, 246, 0.16), rgba(34, 211, 238, 0.05) 40%, transparent 70%)",
+                }}
+            />
+
+            {/* Animated light beams / meteors */}
+            <motion.div
+                animate={{
+                    x: ["-20vw", "120vw"],
+                    y: ["-10vh", "60vh"],
+                    opacity: [0, 1, 0],
+                }}
+                transition={{
+                    duration: 7,
+                    repeat: Infinity,
+                    repeatDelay: 4,
+                    ease: "linear",
+                }}
+                className="absolute top-12 left-0 h-[1px] w-48 rotate-[28deg] bg-gradient-to-r from-transparent via-violet-400 to-transparent opacity-60"
+            />
+            <motion.div
+                animate={{
+                    x: ["-10vw", "110vw"],
+                    y: ["20vh", "85vh"],
+                    opacity: [0, 0.8, 0],
+                }}
+                transition={{
+                    duration: 9,
+                    repeat: Infinity,
+                    repeatDelay: 6,
+                    delay: 3,
+                    ease: "linear",
+                }}
+                className="absolute top-1/3 left-0 h-[1px] w-64 rotate-[28deg] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-50"
             />
         </div>
     )

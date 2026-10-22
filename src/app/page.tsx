@@ -28,7 +28,10 @@ import { supabase } from "@/lib/supabaseClient"
 import { EASE_OUT } from "@/lib/motion"
 import { DomainsSection } from "@/components/DomainsSection"
 import { siteConfig } from "@/lib/siteConfig"
-import { SHOWCASE_PROFILES } from "@/lib/showcaseProfiles"
+import {
+  SHOWCASE_PROFILES,
+  filterValidCraftRosterMembers,
+} from "@/lib/showcaseProfiles"
 import type { Member } from "@/lib/types"
 
 const spaceGrotesk = Space_Grotesk({
@@ -156,7 +159,7 @@ export default function Home() {
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (!error && data && data.length > 0) {
-          setBuilders(data as Member[])
+          setBuilders(filterValidCraftRosterMembers(data as Member[]))
         }
       })
   }, [])
@@ -167,37 +170,59 @@ export default function Home() {
     <div className="overflow-x-clip">
       {/* HERO SECTION */}
       <section className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-6xl flex-col justify-center px-6 pb-16 pt-16">
-        <motion.div {...rise(0)} className="mb-6 flex items-center gap-3">
+        <motion.div {...rise(0)} className="mb-4 flex items-center gap-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-medium text-violet-200 backdrop-blur-md">
             <span className="relative flex size-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-violet-400" />
             </span>
-            Curated Builder & Talent Directory
+            Verified Builder & Talent Directory
           </span>
         </motion.div>
 
-        <motion.h1
-          {...rise(1)}
-          className={`${spaceGrotesk.className} max-w-4xl text-[clamp(2.75rem,7.5vw,6.25rem)] font-bold leading-[0.96] tracking-tight`}
+        {/* Giant Interactive CraftRoster Title */}
+        <h1
+          aria-label={siteConfig.name}
+          className={`${spaceGrotesk.className} flex flex-wrap text-[clamp(3.2rem,10vw,8.2rem)] font-bold leading-[0.92] tracking-tight`}
         >
-          Where standout{" "}
-          <span className="bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300 bg-clip-text text-transparent">
-            builders
-          </span>{" "}
-          craft their proof of work.
-        </motion.h1>
+          {siteConfig.name.split("").map((ch, i) => (
+            <motion.span
+              key={i}
+              aria-hidden
+              initial={{ opacity: 0, y: "35%", filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{
+                duration: 0.45,
+                delay: 0.05 + i * 0.035,
+                ease: EASE_OUT,
+              }}
+              className={`inline-block cursor-default transition-transform duration-200 ease-out hover:-translate-y-2 ${i >= 5
+                  ? "bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300 bg-clip-text text-transparent"
+                  : "text-white hover:text-violet-300"
+                }`}
+            >
+              {ch}
+            </motion.span>
+          ))}
+        </h1>
 
         <motion.p
           {...rise(2)}
-          className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-xl"
+          className={`${spaceGrotesk.className} mt-4 max-w-3xl text-2xl font-medium tracking-tight text-zinc-200 sm:text-4xl`}
+        >
+          Where standout builders craft their proof of work.
+        </motion.p>
+
+        <motion.p
+          {...rise(3)}
+          className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg"
         >
           {siteConfig.tagline} Claim your interactive profile card, get verified
           by curators, and stand out to founders and engineering teams.
         </motion.p>
 
         <div className="mt-12 flex flex-col gap-10 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
-          <motion.div {...rise(3)} className="flex flex-wrap items-center gap-4">
+          <motion.div {...rise(4)} className="flex flex-wrap items-center gap-4">
             <MagneticButton>
               <Link
                 href="/register"
@@ -217,10 +242,7 @@ export default function Home() {
           </motion.div>
 
           {/* Live Synced Counter + Avatar Stack */}
-          <motion.div
-            {...rise(4)}
-            className="flex items-center gap-4"
-          >
+          <motion.div {...rise(5)} className="flex items-center gap-4">
             <div className="flex -space-x-3">
               {builders.slice(0, 4).map((b) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -228,7 +250,7 @@ export default function Home() {
                   key={b.id}
                   src={b.photo_url}
                   alt={b.name}
-                  className="size-10 rounded-full border-2 border-[#06070b] object-cover"
+                  className="size-10 rounded-full border-2 border-[#05060b] object-cover"
                 />
               ))}
             </div>
@@ -259,7 +281,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* FEATURED BUILDERS SHOWCASE (Fixes "No profiles visible") */}
+      {/* FEATURED BUILDERS SHOWCASE */}
       <section className="mx-auto max-w-6xl px-6 py-28">
         <div className="mb-12 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>

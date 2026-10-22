@@ -18,6 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  SHOWCASE_PROFILES,
+  filterValidCraftRosterMembers,
+} from "@/lib/showcaseProfiles"
 
 export default function TeamPage() {
   const [members, setMembers] = useState<Member[]>([])
@@ -44,11 +48,11 @@ export default function TeamPage() {
           .select("*")
           .eq("status", "approved")
           .order("created_at", { ascending: false })
-        if (error) throw error
-        const loaded = (data || []) as Member[]
+
+        const dbMembers = !error && data ? (data as Member[]) : []
+        const loaded = filterValidCraftRosterMembers(dbMembers)
         setMembers(loaded)
 
-        // Open modal automatically if ?builder=@handle is in URL
         const params = new URLSearchParams(window.location.search)
         const builderHandle = params.get("builder")
         if (builderHandle) {
@@ -57,8 +61,8 @@ export default function TeamPage() {
           )
           if (found) setSelectedBuilder(found)
         }
-      } catch (error: any) {
-        console.error("Error fetching members:", error?.message || error)
+      } catch {
+        setMembers(SHOWCASE_PROFILES)
       } finally {
         setLoading(false)
       }
@@ -170,8 +174,8 @@ export default function TeamPage() {
               type="button"
               onClick={() => setDomainFilter(d)}
               className={`rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${active
-                  ? "bg-foreground text-background"
-                  : "border border-white/10 bg-card text-muted-foreground hover:border-white/25 hover:text-foreground"
+                ? "bg-foreground text-background"
+                : "border border-white/10 bg-card text-muted-foreground hover:border-white/25 hover:text-foreground"
                 }`}
             >
               {d}
