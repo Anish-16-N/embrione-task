@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Suspense } from "react"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Navbar from "@/components/Navbar"
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <SmoothScroll />
         <InteractiveBackground />
-        <Navbar />
+        <Suspense fallback={<div className="h-16" />}>
+          <Navbar />
+        </Suspense>
         <CommandMenu />
         <main>{children}</main>
         <footer className="border-t border-white/10 py-12 text-xs text-muted-foreground">

@@ -1,14 +1,13 @@
 // src/app/u/[handle]/page.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { motion } from "motion/react"
 import {
   ArrowLeft,
   ArrowUpRight,
-  Copy,
   Check,
   Share2,
   ShieldCheck,
@@ -32,7 +31,7 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["500", "600", "700"],
 })
 
-export default function BuilderProfilePage() {
+function ProfileContent() {
   const params = useParams<{ handle: string }>()
   const rawHandle = decodeURIComponent(params?.handle || "")
   const normalizedHandle = rawHandle.startsWith("@")
@@ -140,7 +139,6 @@ export default function BuilderProfilePage() {
       </Link>
 
       <div className="grid items-start gap-12 lg:grid-cols-[360px_minmax(0,1fr)]">
-        {/* Left Column: Interactive 3D Card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -163,7 +161,6 @@ export default function BuilderProfilePage() {
           />
         </motion.div>
 
-        {/* Right Column: Full Verified Dossier */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -194,7 +191,6 @@ export default function BuilderProfilePage() {
             </button>
           </div>
 
-          {/* Bio */}
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
               Builder Statement
@@ -204,7 +200,6 @@ export default function BuilderProfilePage() {
             </p>
           </div>
 
-          {/* Skills / Tech Stack Pills */}
           <div>
             <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
               <Code2 className="size-3.5 text-violet-400" /> Stack & Craft
@@ -221,7 +216,6 @@ export default function BuilderProfilePage() {
             </div>
           </div>
 
-          {/* Experience & Status */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="flex items-center gap-1.5 text-xs text-zinc-400">
@@ -241,7 +235,6 @@ export default function BuilderProfilePage() {
             </div>
           </div>
 
-          {/* Action Links */}
           <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
             <button
               type="button"
@@ -293,5 +286,13 @@ export default function BuilderProfilePage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function BuilderProfilePage() {
+  return (
+    <Suspense fallback={<div className="min-h-[60vh]" />}>
+      <ProfileContent />
+    </Suspense>
   )
 }
