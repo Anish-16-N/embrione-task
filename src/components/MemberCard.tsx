@@ -151,15 +151,19 @@ export default function MemberCard({
 
     const handleToggleShortlist = (e: React.MouseEvent) => {
         e.stopPropagation()
-        if (preview || !formattedHandle) return
+        if (preview) return
+
+        const activeHandle =
+            formattedHandle || `@${name.toLowerCase().replace(/\s+/g, "")}`
+
         const added = toggleShortlistBuilder({
-            handle: formattedHandle,
-            name,
-            domain,
-            position,
-            branch,
+            handle: activeHandle,
+            name: name || "Builder",
+            domain: domain || "General",
+            position: position || "Open to Work",
+            branch: branch || "",
             photoUrl,
-            email,
+            email: email || "",
         })
         setShortlisted(added)
         toast.success(
@@ -172,108 +176,107 @@ export default function MemberCard({
             onClick={onClick}
             className={`group [perspective:1100px] ${onClick ? "cursor-pointer" : ""}`}
         >
-            <motion.div
-                ref={cardRef}
-                onPointerMove={handlePointerMove}
-                onPointerLeave={handlePointerLeave}
-                style={{
-                    rotateX,
-                    rotateY,
-                    transformStyle: "preserve-3d",
-                }}
-                className="relative aspect-[4/5] rounded-3xl border border-white/12 bg-zinc-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-shadow duration-300 group-hover:border-violet-500/40 group-hover:shadow-[0_25px_60px_rgba(139,92,246,0.22)]"
-            >
-                {/* Clipped image container */}
-                <div className="absolute inset-0 overflow-hidden rounded-3xl">
-                    <AnimatePresence initial={false} mode="popLayout">
-                        {photoUrl ? (
-                            <motion.img
-                                key={photoUrl}
-                                src={photoUrl}
-                                alt={name ? `Photo of ${name}` : "Profile photo"}
-                                ref={(el) => {
-                                    if (el?.complete && el.naturalWidth > 0)
-                                        setLoadedUrl(photoUrl)
-                                }}
-                                onLoad={() => setLoadedUrl(photoUrl)}
-                                initial={false}
-                                animate={{ opacity: loaded ? 1 : 0 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="absolute inset-0 h-full w-full object-cover grayscale-[0.2] motion-safe:transition-[transform,filter] motion-safe:duration-500 motion-safe:ease-out group-hover:grayscale-0 motion-safe:group-hover:scale-[1.06]"
-                                onError={(e) => {
-                                    const t = e.currentTarget
-                                    t.onerror = null
-                                    t.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "?")}&background=random&size=600`
-                                }}
-                            />
-                        ) : (
-                            <motion.div
-                                key="placeholder"
-                                exit={{ opacity: 0 }}
-                                className="absolute inset-0 grid place-items-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-violet-950/30"
-                            >
-                                <span className="text-8xl font-semibold text-foreground/15">
-                                    {name ? name.charAt(0).toUpperCase() : "?"}
-                                </span>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* 3D Holographic Glare Overlay */}
-                    <motion.div
-                        style={{ background: glareBackground }}
-                        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    />
-                </div>
-
-                {/* Floating 3D Top Badges */}
-                <div
-                    style={{ transform: "translateZ(32px)" }}
-                    className="pointer-events-none absolute inset-x-4 top-4 flex flex-wrap items-center justify-between gap-2"
+            <div className="relative">
+                <motion.div
+                    ref={cardRef}
+                    onPointerMove={handlePointerMove}
+                    onPointerLeave={handlePointerLeave}
+                    style={{
+                        rotateX,
+                        rotateY,
+                        transformStyle: "preserve-3d",
+                    }}
+                    className="relative aspect-[4/5] rounded-3xl border border-white/12 bg-zinc-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-shadow duration-300 group-hover:border-violet-500/40 group-hover:shadow-[0_25px_60px_rgba(139,92,246,0.22)]"
                 >
-                    {position && (
-                        <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-lg backdrop-blur-md ${isAvailable
-                                    ? "border border-emerald-500/30 bg-emerald-950/85 text-emerald-200"
-                                    : "border border-white/10 bg-background/80 text-foreground"
-                                }`}
-                        >
-                            {isAvailable && (
-                                <span className="relative flex size-2">
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                    <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-                                </span>
+                    {/* Clipped image container */}
+                    <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                        <AnimatePresence initial={false} mode="popLayout">
+                            {photoUrl ? (
+                                <motion.img
+                                    key={photoUrl}
+                                    src={photoUrl}
+                                    alt={name ? `Photo of ${name}` : "Profile photo"}
+                                    ref={(el) => {
+                                        if (el?.complete && el.naturalWidth > 0)
+                                            setLoadedUrl(photoUrl)
+                                    }}
+                                    onLoad={() => setLoadedUrl(photoUrl)}
+                                    initial={false}
+                                    animate={{ opacity: loaded ? 1 : 0 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute inset-0 h-full w-full object-cover grayscale-[0.2] motion-safe:transition-[transform,filter] motion-safe:duration-500 motion-safe:ease-out group-hover:grayscale-0 motion-safe:group-hover:scale-[1.06]"
+                                    onError={(e) => {
+                                        const t = e.currentTarget
+                                        t.onerror = null
+                                        t.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "?")}&background=random&size=600`
+                                    }}
+                                />
+                            ) : (
+                                <motion.div
+                                    key="placeholder"
+                                    exit={{ opacity: 0 }}
+                                    className="absolute inset-0 grid place-items-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-violet-950/30"
+                                >
+                                    <span className="text-8xl font-semibold text-foreground/15">
+                                        {name ? name.charAt(0).toUpperCase() : "?"}
+                                    </span>
+                                </motion.div>
                             )}
-                            {position}
-                        </span>
-                    )}
+                        </AnimatePresence>
 
-                    {domain && (
-                        <span className="rounded-full border border-white/15 bg-background/80 px-3 py-1 text-xs font-medium text-foreground/90 shadow-lg backdrop-blur-md">
-                            {domain}
-                        </span>
-                    )}
-                </div>
+                        {/* 3D Holographic Glare Overlay */}
+                        <motion.div
+                            style={{ background: glareBackground }}
+                            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                        />
+                    </div>
 
-                {/* Floating 3D Bookmark Button (Bottom Right of Image) */}
-                {!preview && formattedHandle && (
+                    {/* Floating 3D Top Badges */}
+                    <div
+                        style={{ transform: "translateZ(32px)" }}
+                        className="pointer-events-none absolute inset-x-4 top-4 flex flex-wrap items-center justify-between gap-2"
+                    >
+                        {position && (
+                            <span
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium shadow-lg backdrop-blur-md ${isAvailable
+                                        ? "border border-emerald-500/30 bg-emerald-950/85 text-emerald-200"
+                                        : "border border-white/10 bg-background/80 text-foreground"
+                                    }`}
+                            >
+                                {isAvailable && (
+                                    <span className="relative flex size-2">
+                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+                                    </span>
+                                )}
+                                {position}
+                            </span>
+                        )}
+
+                        {domain && (
+                            <span className="rounded-full border border-white/15 bg-background/80 px-3 py-1 text-xs font-medium text-foreground/90 shadow-lg backdrop-blur-md">
+                                {domain}
+                            </span>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Clickable Bookmark Button Positioned Outside 3D Tilt Container */}
+                {!preview && (
                     <button
                         type="button"
                         onClick={handleToggleShortlist}
                         aria-label={shortlisted ? "Remove from shortlist" : "Save to shortlist"}
-                        style={{ transform: "translateZ(32px)" }}
-                        className={`absolute bottom-4 right-4 grid size-9 place-items-center rounded-full border shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-110 ${shortlisted
-                                ? "border-violet-400/50 bg-violet-600 text-white"
-                                : "border-white/15 bg-zinc-950/75 text-zinc-300 hover:border-white/30 hover:text-white"
+                        className={`absolute bottom-4 right-4 z-20 grid size-10 place-items-center rounded-full border shadow-xl backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 ${shortlisted
+                                ? "border-violet-400/60 bg-violet-600 text-white"
+                                : "border-white/20 bg-zinc-950/85 text-zinc-300 hover:border-white/40 hover:text-white"
                             }`}
                     >
-                        <Bookmark
-                            className={`size-4 ${shortlisted ? "fill-white" : ""}`}
-                        />
+                        <Bookmark className={`size-4 ${shortlisted ? "fill-white" : ""}`} />
                     </button>
                 )}
-            </motion.div>
+            </div>
 
             <div className="mt-4 px-1">
                 <div className="flex items-baseline justify-between gap-2">
