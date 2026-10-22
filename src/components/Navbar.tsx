@@ -50,8 +50,8 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={`relative whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors sm:px-4 sm:py-1.5 sm:text-xs ${isActive
-                    ? "text-white"
-                    : "text-zinc-400 hover:text-zinc-200"
+                  ? "text-white"
+                  : "text-zinc-400 hover:text-zinc-200"
                   }`}
               >
                 {isActive && (
