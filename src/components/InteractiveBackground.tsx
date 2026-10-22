@@ -1,79 +1,62 @@
+// src/components/InteractiveBackground.tsx
 "use client"
 
 import { useEffect, useRef } from "react"
 
-// Soft glow + dot grid that follow the mouse. Static on touch screens / reduced motion.
-// Glow colour. 50 = ember orange. Try 150 (green), 300 (violet), 20 (red).
-const HUE = 50
 export default function InteractiveBackground() {
-    const root = useRef<HTMLDivElement>(null)
-    const glow = useRef<HTMLDivElement>(null)
+    const glowRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const el = root.current
-        const g = glow.current
-        if (!el || !g) return
+        const el = glowRef.current
+        if (!el) return
 
-        const place = (x: number, y: number) => {
-            el.style.setProperty("--mx", `${x}px`)
-            el.style.setProperty("--my", `${y}px`)
-            g.style.transform = `translate3d(${x - 300}px, ${y - 300}px, 0)`
-            g.style.opacity = "1"
+        const handleMove = (e: PointerEvent) => {
+            el.style.setProperty("--mx", `${e.clientX}px`)
+            el.style.setProperty("--my", `${e.clientY}px`)
         }
 
-        let tx = window.innerWidth * 0.5
-        let ty = window.innerHeight * 0.3
-        let x = tx
-        let y = ty
-        place(x, y)
-
-        const canAnimate = window.matchMedia(
-            "(pointer: fine) and (prefers-reduced-motion: no-preference)"
-        ).matches
-        if (!canAnimate) return
-
-        let raf = 0
-        let running = false
-
-        // Move a fraction of the way to the mouse each frame = smooth "lag".
-        const loop = () => {
-            x += (tx - x) * 0.12
-            y += (ty - y) * 0.12
-            place(x, y)
-            if (Math.abs(tx - x) < 0.3 && Math.abs(ty - y) < 0.3) {
-                running = false // close enough: stop the loop until the mouse moves again
-                return
-            }
-            raf = requestAnimationFrame(loop)
-        }
-
-        const onMove = (e: PointerEvent) => {
-            tx = e.clientX
-            ty = e.clientY
-            if (!running) {
-                running = true
-                raf = requestAnimationFrame(loop)
-            }
-        }
-
-        window.addEventListener("pointermove", onMove, { passive: true })
-        return () => {
-            window.removeEventListener("pointermove", onMove)
-            cancelAnimationFrame(raf)
-        }
+        window.addEventListener("pointermove", handleMove, { passive: true })
+        return () => window.removeEventListener("pointermove", handleMove)
     }, [])
 
     return (
-        <div ref={root} aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div
+            ref={glowRef}
+            aria-hidden
+            className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#06070b]"
+            style={
+                {
+                    "--mx": "50vw",
+                    "--my": "30vh",
+                } as React.CSSProperties
+            }
+        >
+            {/* Ambient top aurora beams */}
+            <div className="absolute -top-48 left-1/2 h-[520px] w-[980px] -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-600/20 via-violet-600/20 to-cyan-500/15 blur-[130px]" />
+            <div className="absolute top-[35%] -left-40 h-[400px] w-[400px] rounded-full bg-violet-600/10 blur-[120px]" />
+            <div className="absolute top-[65%] -right-40 h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-[120px]" />
+
+            {/* Interactive mouse-following spotlight */}
             <div
-                className="absolute inset-0"
-                style={{ background: `radial-gradient(ellipse 80% 60% at 20% 0%, oklch(0.24 0.06 ${HUE}), transparent)` }}
+                className="absolute inset-0 transition-opacity duration-300"
+                style={{
+                    background:
+                        "radial-gradient(600px circle at var(--mx) var(--my), rgba(139, 92, 246, 0.13), transparent 70%)",
+                }}
             />
-            <div className="dot-grid absolute inset-0" />
+
+            {/* Crisp dot matrix with radial fade mask */}
             <div
-                ref={glow}
-                className="absolute left-0 top-0 h-[600px] w-[600px] rounded-full opacity-0 transition-opacity duration-500 will-change-transform"
-                style={{ background: `radial-gradient(closest-side, oklch(0.6 0.17 ${HUE} / 0.2), transparent)` }}
+                className="absolute inset-0 opacity-30"
+                style={{
+                    backgroundImage:
+                        "radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px)",
+                    backgroundSize: "28px 28px",
+                    maskImage:
+                        "radial-gradient(ellipse 80% 70% at 50% 35%, black 40%, transparent 100%)",
+                    WebkitMaskImage:
+                        "radial-gradient(ellipse 80% 70% at 50% 35%, black 40%, transparent 100%)",
+                }}
             />
         </div>
     )
