@@ -15,7 +15,6 @@ import {
   Code2,
   Mail,
 } from "lucide-react"
-import { Space_Grotesk } from "next/font/google"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
 import { EASE_OUT } from "@/lib/motion"
@@ -26,10 +25,7 @@ import {
 import type { Member } from "@/lib/types"
 import MemberCard from "@/components/MemberCard"
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-})
+const spaceGrotesk = { className: "" }
 
 function ProfileContent() {
   const params = useParams<{ handle: string }>()
