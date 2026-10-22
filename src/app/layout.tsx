@@ -1,8 +1,10 @@
+// src/app/layout.tsx
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Navbar from "@/components/Navbar"
+import CommandMenu from "@/components/CommandMenu"
 import SmoothScroll from "@/components/SmoothScroll"
 import InteractiveBackground from "@/components/InteractiveBackground"
 import { Toaster } from "@/components/ui/sonner"
@@ -24,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SmoothScroll />
         <InteractiveBackground />
         <Navbar />
+        <CommandMenu />
         <main>{children}</main>
         <footer className="border-t border-white/10 py-12 text-xs text-muted-foreground">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">

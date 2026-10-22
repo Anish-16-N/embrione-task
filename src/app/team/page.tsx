@@ -90,9 +90,10 @@ export default function TeamPage() {
     })
 
   const shareBuilderLink = (member: Member) => {
-    const url = `${window.location.origin}/team?builder=${encodeURIComponent(member.srn)}`
+    const cleanHandle = member.srn.replace(/^@/, "")
+    const url = `${window.location.origin}/u/${encodeURIComponent(cleanHandle)}`
     navigator.clipboard.writeText(url)
-    toast.success(`Shareable profile link copied for ${member.name}`)
+    toast.success(`Copied ${url} to clipboard!`)
   }
 
   return (
