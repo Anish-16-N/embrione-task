@@ -1,7 +1,7 @@
 // src/components/MemberCard.tsx
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
     AnimatePresence,
     motion,
@@ -10,8 +10,12 @@ import {
     useSpring,
     useTransform,
 } from "motion/react"
-import { ArrowUpRight, Copy, Check } from "lucide-react"
+import { ArrowUpRight, Copy, Check, Bookmark } from "lucide-react"
 import { toast } from "sonner"
+import {
+    getStoredShortlist,
+    toggleShortlistBuilder,
+} from "@/components/ShortlistDrawer"
 
 type Props = {
     name: string
@@ -82,8 +86,26 @@ export default function MemberCard({
 }: Props) {
     const [loadedUrl, setLoadedUrl] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
+    const [shortlisted, setShortlisted] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
     const loaded = loadedUrl === photoUrl
+
+    const formattedHandle = handle
+        ? handle.startsWith("@")
+            ? handle.toLowerCase()
+            : `@${handle.toLowerCase()}`
+        : null
+
+    useEffect(() => {
+        if (!formattedHandle || preview) return
+        const check = () => {
+            const list = getStoredShortlist()
+            setShortlisted(list.some((b) => b.handle.toLowerCase() === formattedHandle))
+        }
+        check()
+        window.addEventListener("shortlist-updated", check)
+        return () => window.removeEventListener("shortlist-updated", check)
+    }, [formattedHandle, preview])
 
     // 3D Tilt Motion Values
     const mouseX = useMotionValue(0.5)
@@ -117,11 +139,6 @@ export default function MemberCard({
     }
 
     const isAvailable = position === "Open to Work" || position === "Freelancing"
-    const formattedHandle = handle
-        ? handle.startsWith("@")
-            ? handle.toLowerCase()
-            : `@${handle.toLowerCase()}`
-        : null
 
     const copyEmail = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -130,6 +147,24 @@ export default function MemberCard({
         setCopied(true)
         toast.success(`Copied ${email} to clipboard`)
         setTimeout(() => setCopied(false), 2000)
+    }
+
+    const handleToggleShortlist = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (preview || !formattedHandle) return
+        const added = toggleShortlistBuilder({
+            handle: formattedHandle,
+            name,
+            domain,
+            position,
+            branch,
+            photoUrl,
+            email,
+        })
+        setShortlisted(added)
+        toast.success(
+            added ? `Added ${name} to shortlist` : `Removed ${name} from shortlist`
+        )
     }
 
     return (
@@ -192,7 +227,7 @@ export default function MemberCard({
                     />
                 </div>
 
-                {/* Floating 3D Top Badges (pop out in Z-space on hover) */}
+                {/* Floating 3D Top Badges */}
                 <div
                     style={{ transform: "translateZ(32px)" }}
                     className="pointer-events-none absolute inset-x-4 top-4 flex flex-wrap items-center justify-between gap-2"
@@ -220,6 +255,24 @@ export default function MemberCard({
                         </span>
                     )}
                 </div>
+
+                {/* Floating 3D Bookmark Button (Bottom Right of Image) */}
+                {!preview && formattedHandle && (
+                    <button
+                        type="button"
+                        onClick={handleToggleShortlist}
+                        aria-label={shortlisted ? "Remove from shortlist" : "Save to shortlist"}
+                        style={{ transform: "translateZ(32px)" }}
+                        className={`absolute bottom-4 right-4 grid size-9 place-items-center rounded-full border shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-110 ${shortlisted
+                                ? "border-violet-400/50 bg-violet-600 text-white"
+                                : "border-white/15 bg-zinc-950/75 text-zinc-300 hover:border-white/30 hover:text-white"
+                            }`}
+                    >
+                        <Bookmark
+                            className={`size-4 ${shortlisted ? "fill-white" : ""}`}
+                        />
+                    </button>
+                )}
             </motion.div>
 
             <div className="mt-4 px-1">
