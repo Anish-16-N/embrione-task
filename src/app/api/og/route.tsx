@@ -2,8 +2,6 @@
 import { ImageResponse } from "next/og"
 import type { NextRequest } from "next/server"
 
-export const runtime = "edge"
-
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const name = searchParams.get("name") || "Verified Builder"
@@ -12,6 +10,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "Open to Work"
     const stack =
         searchParams.get("stack") || "Next.js, TypeScript, Tailwind CSS, Supabase"
+
     return new ImageResponse(
         (
             <div
@@ -29,7 +28,6 @@ export async function GET(req: NextRequest) {
                     fontFamily: "sans-serif",
                 }}
             >
-                {/* Top Row: Brand & Status */}
                 <div
                     style={{
                         display: "flex",
@@ -59,13 +57,7 @@ export async function GET(req: NextRequest) {
                         </span>
                     </div>
 
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                        }}
-                    >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                         <span
                             style={{
                                 padding: "10px 22px",
@@ -95,7 +87,6 @@ export async function GET(req: NextRequest) {
                     </div>
                 </div>
 
-                {/* Center Builder Identity */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     <div
                         style={{
@@ -127,7 +118,6 @@ export async function GET(req: NextRequest) {
                     </div>
                 </div>
 
-                {/* Bottom Footer */}
                 <div
                     style={{
                         display: "flex",
