@@ -169,7 +169,7 @@ export default function Home() {
   return (
     <div className="overflow-x-clip">
       {/* HERO SECTION */}
-      <section className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-6xl flex-col justify-center px-6 pb-16 pt-16">
+      <section className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-6xl flex-col justify-center px-5 pb-14 pt-8 sm:px-6 sm:pb-16 sm:pt-16">
         <motion.div {...rise(0)} className="mb-4 flex items-center gap-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-medium text-violet-200 backdrop-blur-md">
             <span className="relative flex size-2">
@@ -183,7 +183,7 @@ export default function Home() {
         {/* Giant Interactive CraftRoster Title */}
         <h1
           aria-label={siteConfig.name}
-          className={`${spaceGrotesk.className} flex flex-wrap text-[clamp(3.2rem,10vw,8.2rem)] font-bold leading-[0.92] tracking-tight`}
+          className={`${spaceGrotesk.className} flex flex-nowrap whitespace-nowrap text-[clamp(2.65rem,11vw,8.2rem)] font-bold leading-[0.94] tracking-tight`}
         >
           {siteConfig.name.split("").map((ch, i) => (
             <motion.span
@@ -208,25 +208,28 @@ export default function Home() {
 
         <motion.p
           {...rise(2)}
-          className={`${spaceGrotesk.className} mt-4 max-w-3xl text-2xl font-medium tracking-tight text-zinc-200 sm:text-4xl`}
+          className={`${spaceGrotesk.className} mt-4 max-w-3xl text-xl font-medium tracking-tight text-zinc-200 sm:text-4xl`}
         >
           Where standout builders craft their proof of work.
         </motion.p>
 
         <motion.p
           {...rise(3)}
-          className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg"
+          className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:mt-4 sm:text-lg"
         >
           {siteConfig.tagline} Claim your interactive profile card, get verified
           by curators, and stand out to founders and engineering teams.
         </motion.p>
 
-        <div className="mt-12 flex flex-col gap-10 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
-          <motion.div {...rise(4)} className="flex flex-wrap items-center gap-4">
+        <div className="mt-8 flex flex-col gap-8 border-t border-white/10 pt-7 sm:mt-12 sm:gap-10 sm:pt-8 md:flex-row md:items-center md:justify-between">
+          <motion.div
+            {...rise(4)}
+            className="flex flex-wrap items-center gap-3 sm:gap-4"
+          >
             <MagneticButton>
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-zinc-950 shadow-[0_0_25px_rgba(255,255,255,0.25)] transition-transform hover:scale-[1.03] active:scale-[0.97]"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_0_25px_rgba(255,255,255,0.25)] transition-transform hover:scale-[1.03] active:scale-[0.97] sm:px-7 sm:py-3.5"
               >
                 <Sparkles className="size-4 text-violet-600" />
                 Claim Your Card
@@ -234,7 +237,7 @@ export default function Home() {
             </MagneticButton>
             <Link
               href="/team"
-              className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-6 py-3.5 text-sm font-medium text-zinc-200 backdrop-blur-md transition-colors hover:border-white/30 hover:bg-white/[0.07]"
+              className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-sm font-medium text-zinc-200 backdrop-blur-md transition-colors hover:border-white/30 hover:bg-white/[0.07] sm:px-6 sm:py-3.5"
             >
               Explore Roster
               <ArrowRight className="size-4 transition-transform duration-200 ease-out group-hover:translate-x-1" />
@@ -250,13 +253,13 @@ export default function Home() {
                   key={b.id}
                   src={b.photo_url}
                   alt={b.name}
-                  className="size-10 rounded-full border-2 border-[#05060b] object-cover"
+                  className="size-9 rounded-full border-2 border-[#05060b] object-cover sm:size-10"
                 />
               ))}
             </div>
             <div>
               <p
-                className={`${spaceGrotesk.className} text-3xl font-bold tabular-nums tracking-tight text-white sm:text-4xl`}
+                className={`${spaceGrotesk.className} text-2xl font-bold tabular-nums tracking-tight text-white sm:text-4xl`}
               >
                 <CountUpTicker target={builders.length} />+
               </p>

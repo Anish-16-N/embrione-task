@@ -20,9 +20,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark overflow-x-hidden">
       <body
-        className={`${inter.className} min-h-screen bg-background text-foreground antialiased selection:bg-foreground selection:text-background`}
+        className={`${inter.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased selection:bg-foreground selection:text-background`}
       >
         <SmoothScroll />
         <InteractiveBackground />
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
         </Suspense>
         <CommandMenu />
-        <main>{children}</main>
+        <main className="overflow-x-hidden">{children}</main>
         <footer className="border-t border-white/10 py-12 text-xs text-muted-foreground">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
             <p>© 2026 {siteConfig.name}. Curated Builder Directory.</p>
