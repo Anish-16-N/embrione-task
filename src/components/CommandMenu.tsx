@@ -1,3 +1,4 @@
+// src/components/CommandMenu.tsx
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -28,7 +29,6 @@ export default function CommandMenu() {
     const [selectedIndex, setSelectedIndex] = useState(0)
     const router = useRouter()
 
-    // Listen for Cmd+K / Ctrl+K or custom event from Navbar button
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -48,7 +48,6 @@ export default function CommandMenu() {
         }
     }, [])
 
-    // Fetch live approved builders once when opened
     useEffect(() => {
         if (!open) return
         supabase
@@ -108,7 +107,7 @@ export default function CommandMenu() {
                     b.domain.toLowerCase().includes(q)
                 )
             })
-            .slice(0, 5)
+            .slice(0, 6)
             .map((b) => ({
                 id: `builder-${b.id}`,
                 type: "builder" as const,
@@ -192,8 +191,11 @@ export default function CommandMenu() {
                             </kbd>
                         </div>
 
-                        {/* Results List */}
-                        <div className="max-h-[360px] overflow-y-auto p-2">
+                        {/* Scrollable Results List with mousepad wheel containment */}
+                        <div
+                            onWheel={(e) => e.stopPropagation()}
+                            className="max-h-[380px] overflow-y-auto overscroll-contain p-2"
+                        >
                             {results.length === 0 ? (
                                 <div className="py-12 text-center text-sm text-zinc-500">
                                     No builders or actions match &ldquo;{query}&rdquo;
