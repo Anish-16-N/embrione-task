@@ -24,16 +24,13 @@ export default function Navbar() {
       className="sticky top-4 z-50 mx-auto max-w-4xl px-4"
     >
       <div className="flex h-14 items-center justify-between rounded-full border border-white/12 bg-zinc-950/75 px-3 pl-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
-        {/* Brand Logo with glowing emblem */}
+        {/* Clean Brand Logo without v2.0 */}
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="relative grid size-7 place-items-center rounded-full bg-gradient-to-tr from-indigo-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-transform duration-200 group-hover:scale-105">
             <Sparkles className="size-3.5" />
           </span>
           <span className="text-sm font-semibold tracking-tight text-white">
             {siteConfig.name}
-          </span>
-          <span className="hidden rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 font-mono text-[10px] font-medium text-violet-300 sm:inline-block">
-            v2.0
           </span>
         </Link>
 
@@ -46,8 +43,8 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={`relative rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${isActive
-                  ? "text-white"
-                  : "text-zinc-400 hover:text-zinc-200"
+                    ? "text-white"
+                    : "text-zinc-400 hover:text-zinc-200"
                   }`}
               >
                 {isActive && (
