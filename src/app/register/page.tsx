@@ -38,10 +38,10 @@ export default function RegisterPage() {
   const [name, setName] = useState("")
   const [srn, setSrn] = useState("")
   const [email, setEmail] = useState("")
-  const [domain, setDomain] = useState<string>(siteConfig.domains[0])
-  const [position, setPosition] = useState<string>(siteConfig.roles[0])
+  const [domain, setDomain] = useState<string>("")
+  const [position, setPosition] = useState<string>("")
   const [branch, setBranch] = useState("")
-  const [semester, setSemester] = useState<number>(2)
+  const [semester, setSemester] = useState<string>("")
   const [bio, setBio] = useState("")
   const [githubUrl, setGithubUrl] = useState("")
   const [linkedinUrl, setLinkedinUrl] = useState("")
@@ -127,7 +127,15 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !srn.trim() || !email.trim() || !branch.trim()) {
+    if (
+      !name.trim() ||
+      !srn.trim() ||
+      !email.trim() ||
+      !domain ||
+      !position ||
+      !branch.trim() ||
+      !semester
+    ) {
       toast.error("Please fill in all required fields")
       return
     }
@@ -276,7 +284,7 @@ export default function RegisterPage() {
                   type="text"
                   value={ghUsername}
                   onChange={(e) => setGhUsername(e.target.value)}
-                  placeholder="e.g. shadcn or your GitHub username"
+                  placeholder="Enter your GitHub username"
                   className="h-10 w-full rounded-xl border border-white/12 bg-zinc-950/80 pl-10 pr-3 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
                 />
               </div>
@@ -308,7 +316,7 @@ export default function RegisterPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Aarav Mehta"
+                placeholder="Enter your full name"
                 className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950/70 px-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
               />
             </div>
@@ -321,7 +329,7 @@ export default function RegisterPage() {
                 required
                 value={srn}
                 onChange={(e) => setSrn(e.target.value)}
-                placeholder="@aaravbuilds"
+                placeholder="@yourhandle"
                 className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950/70 px-3.5 font-mono text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
               />
             </div>
@@ -337,7 +345,7 @@ export default function RegisterPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="aarav@craftroster.dev"
+                placeholder="you@example.com"
                 className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950/70 px-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
               />
             </div>
@@ -352,8 +360,9 @@ export default function RegisterPage() {
                 min={1}
                 max={25}
                 value={semester}
-                onChange={(e) => setSemester(Number(e.target.value))}
-                className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950/70 px-3.5 text-sm text-white focus:border-violet-500 focus:outline-none"
+                onChange={(e) => setSemester(e.target.value)}
+                placeholder="e.g. 2"
+                className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950/70 px-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
               />
             </div>
           </div>
@@ -364,12 +373,17 @@ export default function RegisterPage() {
                 Primary Craft Domain *
               </label>
               <select
+                required
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950 px-3.5 text-sm text-white focus:border-violet-500 focus:outline-none"
+                className={`h-11 w-full rounded-xl border border-white/12 bg-zinc-950 px-3.5 text-sm focus:border-violet-500 focus:outline-none ${domain ? "text-white" : "text-zinc-500"
+                  }`}
               >
+                <option value="" disabled>
+                  Select a craft domain...
+                </option>
                 {siteConfig.domains.map((d) => (
-                  <option key={d} value={d}>
+                  <option key={d} value={d} className="text-white">
                     {d}
                   </option>
                 ))}
@@ -381,12 +395,17 @@ export default function RegisterPage() {
                 Current Availability *
               </label>
               <select
+                required
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-                className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950 px-3.5 text-sm text-white focus:border-violet-500 focus:outline-none"
+                className={`h-11 w-full rounded-xl border border-white/12 bg-zinc-950 px-3.5 text-sm focus:border-violet-500 focus:outline-none ${position ? "text-white" : "text-zinc-500"
+                  }`}
               >
+                <option value="" disabled>
+                  Select availability...
+                </option>
                 {siteConfig.roles.map((r) => (
-                  <option key={r} value={r}>
+                  <option key={r} value={r} className="text-white">
                     {r}
                   </option>
                 ))}
@@ -403,7 +422,7 @@ export default function RegisterPage() {
               required
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
-              placeholder="Next.js, TypeScript, Go, Postgres"
+              placeholder="Select below or type your stack..."
               className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950/70 px-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
             />
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
@@ -510,23 +529,20 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Right Column: Sticky Live 3D Card Preview */}
+        {/* Right Column: Sticky Live 3D Card Preview (Starts completely blank until user inputs data) */}
         <div className="lg:sticky lg:top-24">
           <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-zinc-400 lg:text-left">
             Live Interactive 3D Preview
           </p>
           <div className="mx-auto max-w-sm">
             <MemberCard
-              name={name || "Aarav Mehta"}
-              handle={srn || "@aaravbuilds"}
+              name={name}
+              handle={srn || undefined}
               domain={domain}
               position={position}
-              branch={branch || "Next.js, TypeScript, Rust"}
+              branch={branch}
               semester={semester}
-              bio={
-                bio ||
-                "Building high-craft developer tools and distributed systems. Move your cursor over this card to test the 3D holographic tilt."
-              }
+              bio={bio}
               photoUrl={photoPreview}
               github={githubUrl || null}
               linkedin={linkedinUrl || null}
