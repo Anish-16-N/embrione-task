@@ -14,6 +14,10 @@ import {
   Briefcase,
   Code2,
   Mail,
+  Download,
+  Flame,
+  GitBranch,
+  Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
@@ -22,10 +26,27 @@ import {
   SHOWCASE_PROFILES,
   filterValidCraftRosterMembers,
 } from "@/lib/showcaseProfiles"
+import { getBuilderVouchState, toggleBuilderVouch } from "@/lib/vouches"
 import type { Member } from "@/lib/types"
 import MemberCard from "@/components/MemberCard"
 
-const spaceGrotesk = { className: "" }
+type GitHubStats = {
+  username: string
+  public_repos: number
+  followers: number
+}
+
+function extractGitHubUsername(url?: string | null): string | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    if (!parsed.hostname.includes("github.com")) return null
+    const seg = parsed.pathname.split("/").filter(Boolean)[0]
+    return seg || null
+  } catch {
+    return null
+  }
+}
 
 function ProfileContent() {
   const params = useParams<{ handle: string }>()
@@ -37,6 +58,8 @@ function ProfileContent() {
   const [builder, setBuilder] = useState<Member | null>(null)
   const [loading, setLoading] = useState(true)
   const [copiedEmail, setCopiedEmail] = useState(false)
+  const [vouchState, setVouchState] = useState({ count: 24, vouched: false })
+  const [ghStats, setGhStats] = useState<GitHubStats | null>(null)
 
   useEffect(() => {
     const loadBuilder = async () => {
@@ -60,6 +83,24 @@ function ProfileContent() {
           null
 
         setBuilder(match)
+        if (match) {
+          setVouchState(getBuilderVouchState(match.srn, match.name))
+          const ghUser = extractGitHubUsername(match.github_url)
+          if (ghUser) {
+            fetch(`https://api.github.com/users/${encodeURIComponent(ghUser)}`)
+              .then((r) => (r.ok ? r.json() : null))
+              .then((d) => {
+                if (d && typeof d.public_repos === "number") {
+                  setGhStats({
+                    username: ghUser,
+                    public_repos: d.public_repos,
+                    followers: d.followers ?? 0,
+                  })
+                }
+              })
+              .catch(() => { })
+          }
+        }
       } catch {
         const fallback =
           SHOWCASE_PROFILES.find(
@@ -72,6 +113,14 @@ function ProfileContent() {
     }
     loadBuilder()
   }, [normalizedHandle])
+
+  useEffect(() => {
+    if (!builder) return
+    const sync = () =>
+      setVouchState(getBuilderVouchState(builder.srn, builder.name))
+    window.addEventListener("vouches-updated", sync)
+    return () => window.removeEventListener("vouches-updated", sync)
+  }, [builder])
 
   if (loading) {
     return (
@@ -90,11 +139,10 @@ function ProfileContent() {
   if (!builder) {
     return (
       <div className="mx-auto flex min-h-[65vh] max-w-xl flex-col items-center justify-center px-6 text-center">
-        <h1 className={`${spaceGrotesk.className} text-4xl font-bold`}>
-          Builder not found
-        </h1>
+        <h1 className="text-4xl font-bold tracking-tight">Builder not found</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          No verified profile matches <span className="font-mono">{normalizedHandle}</span>.
+          No verified profile matches{" "}
+          <span className="font-mono">{normalizedHandle}</span>.
         </p>
         <Link
           href="/team"
@@ -111,6 +159,14 @@ function ProfileContent() {
     .map((s) => s.trim())
     .filter(Boolean)
 
+  const ogBannerUrl = `/api/og?name=${encodeURIComponent(
+    builder.name
+  )}&handle=${encodeURIComponent(builder.srn)}&domain=${encodeURIComponent(
+    builder.domain
+  )}&status=${encodeURIComponent(builder.position)}&stack=${encodeURIComponent(
+    builder.branch
+  )}`
+
   const shareProfile = () => {
     const clean = builder.srn.replace(/^@/, "")
     const url = `${window.location.origin}/u/${encodeURIComponent(clean)}`
@@ -123,6 +179,14 @@ function ProfileContent() {
     setCopiedEmail(true)
     toast.success(`Copied ${builder.email}`)
     setTimeout(() => setCopiedEmail(false), 2000)
+  }
+
+  const handleVouch = () => {
+    const next = toggleBuilderVouch(builder.srn, builder.name)
+    setVouchState(next)
+    if (next.vouched) {
+      toast.success(`You vouched for ${builder.name}! 🔥`)
+    }
   }
 
   return (
@@ -168,9 +232,7 @@ function ProfileContent() {
               <div className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300">
                 <ShieldCheck className="size-3.5" /> Verified CraftRoster Builder
               </div>
-              <h1
-                className={`${spaceGrotesk.className} mt-3 text-4xl font-bold tracking-tight sm:text-5xl`}
-              >
+              <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
                 {builder.name}
               </h1>
               <p className="mt-1 font-mono text-sm text-zinc-400">
@@ -178,13 +240,34 @@ function ProfileContent() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={shareProfile}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-white transition-colors hover:border-violet-500/40 hover:bg-white/10"
-            >
-              <Share2 className="size-3.5 text-violet-400" /> Share Profile
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleVouch}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-all ${vouchState.vouched
+                  ? "border-amber-400/50 bg-amber-500/20 text-amber-200"
+                  : "border-white/15 bg-white/5 text-white hover:border-amber-400/40"
+                  }`}
+              >
+                <Flame
+                  className={`size-3.5 ${vouchState.vouched
+                    ? "fill-amber-400 text-amber-400"
+                    : "text-amber-400"
+                    }`}
+                />
+                <span>
+                  {vouchState.vouched ? "Vouched" : "Vouch"} ({vouchState.count})
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={shareProfile}
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-white transition-colors hover:border-violet-500/40 hover:bg-white/10"
+              >
+                <Share2 className="size-3.5 text-violet-400" /> Share Link
+              </button>
+            </div>
           </div>
 
           <div>
@@ -212,7 +295,8 @@ function ProfileContent() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Metrics Row: Experience, Availability & Proof-of-Work */}
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="flex items-center gap-1.5 text-xs text-zinc-400">
                 <Briefcase className="size-3.5 text-violet-400" /> Experience
@@ -224,13 +308,53 @@ function ProfileContent() {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-              <p className="text-xs text-zinc-400">Current Availability</p>
+              <p className="text-xs text-zinc-400">Availability</p>
               <p className="mt-1 text-lg font-semibold text-emerald-300">
                 {builder.position}
               </p>
             </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+              <p className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <GitBranch className="size-3.5 text-cyan-400" />{" "}
+                {ghStats ? `@${ghStats.username}` : "Community Vouches"}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-white">
+                {ghStats
+                  ? `${ghStats.public_repos} Public Repos`
+                  : `${vouchState.count} Endorsements`}
+              </p>
+            </div>
           </div>
 
+          {/* Dynamic Social Banner Preview & Download */}
+          <div className="rounded-2xl border border-white/10 bg-black/35 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-300">
+                <Sparkles className="size-3.5 text-violet-400" /> Shareable
+                Social Banner (LinkedIn / X)
+              </span>
+              <a
+                href={ogBannerUrl}
+                download={`${builder.srn.replace(/^@/, "")}-craftroster-card.png`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/25"
+              >
+                <Download className="size-3.5" /> Download Banner
+              </a>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ogBannerUrl}
+                alt={`${builder.name} CraftRoster social banner`}
+                className="aspect-[1200/630] w-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Contact & External Links */}
           <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
             <button
               type="button"

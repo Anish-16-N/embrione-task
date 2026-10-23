@@ -10,12 +10,13 @@ import {
     useSpring,
     useTransform,
 } from "motion/react"
-import { ArrowUpRight, Copy, Check, Bookmark } from "lucide-react"
+import { ArrowUpRight, Copy, Check, Bookmark, Flame } from "lucide-react"
 import { toast } from "sonner"
 import {
     getStoredShortlist,
     toggleShortlistBuilder,
 } from "@/components/ShortlistDrawer"
+import { getBuilderVouchState, toggleBuilderVouch } from "@/lib/vouches"
 
 type Props = {
     name: string
@@ -87,6 +88,8 @@ export default function MemberCard({
     const [loadedUrl, setLoadedUrl] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
     const [shortlisted, setShortlisted] = useState(false)
+    const [vouchCount, setVouchCount] = useState(12)
+    const [vouched, setVouched] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
     const loaded = loadedUrl === photoUrl
 
@@ -97,15 +100,31 @@ export default function MemberCard({
         : null
 
     useEffect(() => {
-        if (!formattedHandle || preview) return
-        const check = () => {
+        if (preview) return
+        const activeHandle =
+            formattedHandle || `@${(name || "builder").toLowerCase().replace(/\s+/g, "")}`
+
+        const syncShortlist = () => {
             const list = getStoredShortlist()
-            setShortlisted(list.some((b) => b.handle.toLowerCase() === formattedHandle))
+            setShortlisted(list.some((b) => b.handle.toLowerCase() === activeHandle))
         }
-        check()
-        window.addEventListener("shortlist-updated", check)
-        return () => window.removeEventListener("shortlist-updated", check)
-    }, [formattedHandle, preview])
+
+        const syncVouches = () => {
+            const state = getBuilderVouchState(activeHandle, name)
+            setVouchCount(state.count)
+            setVouched(state.vouched)
+        }
+
+        syncShortlist()
+        syncVouches()
+
+        window.addEventListener("shortlist-updated", syncShortlist)
+        window.addEventListener("vouches-updated", syncVouches)
+        return () => {
+            window.removeEventListener("shortlist-updated", syncShortlist)
+            window.removeEventListener("vouches-updated", syncVouches)
+        }
+    }, [formattedHandle, name, preview])
 
     // 3D Tilt Motion Values
     const mouseX = useMotionValue(0.5)
@@ -169,6 +188,19 @@ export default function MemberCard({
         toast.success(
             added ? `Added ${name} to shortlist` : `Removed ${name} from shortlist`
         )
+    }
+
+    const handleVouch = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (preview) return
+        const activeHandle =
+            formattedHandle || `@${name.toLowerCase().replace(/\s+/g, "")}`
+        const next = toggleBuilderVouch(activeHandle, name)
+        setVouchCount(next.count)
+        setVouched(next.vouched)
+        if (next.vouched) {
+            toast.success(`You vouched for ${name}! 🔥`)
+        }
     }
 
     return (
@@ -262,19 +294,45 @@ export default function MemberCard({
                     </div>
                 </motion.div>
 
-                {/* Clickable Bookmark Button Positioned Outside 3D Tilt Container */}
+                {/* Interactive Bottom Overlay Controls (Outside 3D Tilt Container for Instant Clicks) */}
                 {!preview && (
-                    <button
-                        type="button"
-                        onClick={handleToggleShortlist}
-                        aria-label={shortlisted ? "Remove from shortlist" : "Save to shortlist"}
-                        className={`absolute bottom-4 right-4 z-20 grid size-10 place-items-center rounded-full border shadow-xl backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 ${shortlisted
-                                ? "border-violet-400/60 bg-violet-600 text-white"
-                                : "border-white/20 bg-zinc-950/85 text-zinc-300 hover:border-white/40 hover:text-white"
-                            }`}
-                    >
-                        <Bookmark className={`size-4 ${shortlisted ? "fill-white" : ""}`} />
-                    </button>
+                    <div className=" absolute inset-x-4 bottom-4 z-20 flex items-center justify-between pointer-events-none">
+                        {/* Vouch / Endorse Pill */}
+                        <button
+                            type="button"
+                            onClick={handleVouch}
+                            aria-label={`Vouch for ${name}`}
+                            className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-xl backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 ${vouched
+                                    ? "border-amber-400/50 bg-amber-500/20 text-amber-200"
+                                    : "border-white/20 bg-zinc-950/85 text-zinc-200 hover:border-amber-400/40 hover:text-white"
+                                }`}
+                        >
+                            <Flame
+                                className={`size-3.5 ${vouched
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-amber-400/80"
+                                    }`}
+                            />
+                            <span className="tabular-nums">{vouchCount}</span>
+                        </button>
+
+                        {/* Bookmark / Shortlist Button */}
+                        <button
+                            type="button"
+                            onClick={handleToggleShortlist}
+                            aria-label={
+                                shortlisted ? "Remove from shortlist" : "Save to shortlist"
+                            }
+                            className={`pointer-events-auto grid size-9 place-items-center rounded-full border shadow-xl backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 ${shortlisted
+                                    ? "border-violet-400/60 bg-violet-600 text-white"
+                                    : "border-white/20 bg-zinc-950/85 text-zinc-300 hover:border-white/40 hover:text-white"
+                                }`}
+                        >
+                            <Bookmark
+                                className={`size-4 ${shortlisted ? "fill-white" : ""}`}
+                            />
+                        </button>
+                    </div>
                 )}
             </div>
 
