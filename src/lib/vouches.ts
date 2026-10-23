@@ -1,5 +1,3 @@
-// src/lib/vouches.ts
-
 const VOUCH_COUNTS_KEY = "craftroster_vouch_counts_v1"
 const USER_VOUCHED_KEY = "craftroster_user_vouched_v1"
 

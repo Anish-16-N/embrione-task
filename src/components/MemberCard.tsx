@@ -294,9 +294,9 @@ export default function MemberCard({
                     </div>
                 </motion.div>
 
-                {/* Interactive Bottom Overlay Controls (Outside 3D Tilt Container for Instant Clicks) */}
+                {/* Interactive Bottom Overlay Controls (Outside 3D Tilt Container) */}
                 {!preview && (
-                    <div className=" absolute inset-x-4 bottom-4 z-20 flex items-center justify-between pointer-events-none">
+                    <div className="pointer-events-none absolute inset-x-4 bottom-4 z-20 flex items-center justify-between">
                         {/* Vouch / Endorse Pill */}
                         <button
                             type="button"

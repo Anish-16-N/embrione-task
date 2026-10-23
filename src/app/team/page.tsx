@@ -93,7 +93,6 @@ function TeamDirectoryContent() {
   }, [])
 
   const filteredMembers = useMemo(() => {
-    // Reference vouchTick so sorting updates live when a user clicks Vouch
     void vouchTick
 
     return members
@@ -180,7 +179,6 @@ function TeamDirectoryContent() {
       {/* Search, Quick Skill Pills & Sort Controls */}
       <div className="mt-8 space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          {/* Search Bar */}
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
             <input
@@ -201,7 +199,6 @@ function TeamDirectoryContent() {
             )}
           </div>
 
-          {/* Sort Selector */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
               <SlidersHorizontal className="size-3.5 text-violet-400" /> Sort:
@@ -288,8 +285,7 @@ function TeamDirectoryContent() {
       <div className="mt-8 flex items-center justify-between text-xs text-zinc-400">
         <span>
           Showing <strong className="text-white">{filteredMembers.length}</strong>{" "}
-          verified{" "}
-          {filteredMembers.length === 1 ? "builder" : "builders"}
+          verified {filteredMembers.length === 1 ? "builder" : "builders"}
         </span>
         {(selectedDomain !== "All" ||
           selectedStatus !== "All" ||
