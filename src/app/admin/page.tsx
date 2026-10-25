@@ -16,8 +16,11 @@ import {
   Database,
   RefreshCw,
   Lock,
+  LogOut,
   Sparkles,
   ArrowUpRight,
+  Loader2,
+  Mail,
 } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
@@ -27,11 +30,15 @@ import type { Member } from "@/lib/types"
 
 type FilterTab = "all" | "pending" | "approved" | "rejected"
 
-const ADMIN_PASSCODE = "craft2025"
-
 export default function AdminCuratorPage() {
   const [unlocked, setUnlocked] = useState(false)
-  const [passcode, setPasscode] = useState("")
+  const [adminEmail, setAdminEmail] = useState<string | null>(null)
+  const [checkingSession, setCheckingSession] = useState(true)
+  const [verifying, setVerifying] = useState(false)
+
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
@@ -39,10 +46,31 @@ export default function AdminCuratorPage() {
   const [search, setSearch] = useState("")
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = window.sessionStorage.getItem("craftroster_admin_unlocked")
-      if (saved === "true") setUnlocked(true)
+    const checkSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (session?.user) {
+          setUnlocked(true)
+          setAdminEmail(session.user.email ?? null)
+        }
+      } catch {
+        // Not signed in
+      } finally {
+        setCheckingSession(false)
+      }
     }
+    checkSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUnlocked(Boolean(session?.user))
+      setAdminEmail(session?.user?.email ?? null)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const fetchAllMembers = async () => {
@@ -70,20 +98,38 @@ export default function AdminCuratorPage() {
     }
   }, [unlocked])
 
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (
-      passcode.trim() === ADMIN_PASSCODE ||
-      passcode.trim().toLowerCase() === "admin"
-    ) {
-      setUnlocked(true)
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("craftroster_admin_unlocked", "true")
+    if (!email.trim() || !password) return
+
+    setVerifying(true)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+
+      if (error || !data.session) {
+        toast.error(error?.message || "Invalid curator credentials")
+        return
       }
-      toast.success("Curator portal unlocked")
-    } else {
-      toast.error("Invalid passcode (Hint: use 'craft2025' or 'admin')")
+
+      setUnlocked(true)
+      setAdminEmail(data.user?.email ?? null)
+      setPassword("")
+      toast.success("Signed in to Curator Portal")
+    } catch {
+      toast.error("Authentication failed")
+    } finally {
+      setVerifying(false)
     }
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUnlocked(false)
+    setAdminEmail(null)
+    toast.success("Signed out of Curator Portal")
   }
 
   const updateMemberStatus = async (
@@ -130,21 +176,36 @@ export default function AdminCuratorPage() {
       )
       const toInsert = SHOWCASE_PROFILES.filter(
         (p) => !existingHandles.has(p.srn.toLowerCase().trim())
-      ).map(({ name, srn, email, domain, position, branch, semester, bio, photo_url, github_url, linkedin_url, portfolio_url }) => ({
-        name,
-        srn,
-        email,
-        domain,
-        position,
-        branch,
-        semester,
-        bio,
-        photo_url,
-        github_url,
-        linkedin_url,
-        portfolio_url,
-        status: "approved",
-      }))
+      ).map(
+        ({
+          name,
+          srn,
+          email,
+          domain,
+          position,
+          branch,
+          semester,
+          bio,
+          photo_url,
+          github_url,
+          linkedin_url,
+          portfolio_url,
+        }) => ({
+          name,
+          srn,
+          email,
+          domain,
+          position,
+          branch,
+          semester,
+          bio,
+          photo_url,
+          github_url,
+          linkedin_url,
+          portfolio_url,
+          status: "approved",
+        })
+      )
 
       if (toInsert.length === 0) {
         toast.info("All 6 showcase builders are already in your database!")
@@ -233,6 +294,14 @@ export default function AdminCuratorPage() {
     })
   }, [members, activeTab, search])
 
+  if (checkingSession) {
+    return (
+      <div className="mx-auto flex min-h-[75vh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-violet-400" />
+      </div>
+    )
+  }
+
   if (!unlocked) {
     return (
       <div className="mx-auto flex min-h-[75vh] max-w-md flex-col justify-center px-6 py-16">
@@ -245,36 +314,56 @@ export default function AdminCuratorPage() {
           <div className="mb-4 inline-flex size-11 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300">
             <Lock className="size-5" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Curator Access
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Curator Sign In</h1>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
-            Enter the curator passcode to review pending builder cards, verify
-            proof-of-work submissions, and manage the directory.
+            Sign in with your authorized Supabase administrator account for
+            CraftRoster.
           </p>
 
-          <form onSubmit={handleUnlock} className="mt-6 space-y-4">
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-zinc-300">
-                Passcode
+                Admin Email
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@craftroster.dev"
+                  className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950 pl-10 pr-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-300">
+                Password
               </label>
               <input
                 type="password"
                 required
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter passcode (craft2025)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
                 className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950 px-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
               />
-              <p className="mt-1.5 font-mono text-[11px] text-zinc-500">
-                Demo passcode: <span className="text-zinc-300">craft2025</span>
-              </p>
             </div>
+
             <button
               type="submit"
-              className="inline-flex h-11 w-full items-center justify-center rounded-full bg-white text-xs font-semibold text-zinc-950 transition-transform hover:scale-[1.01]"
+              disabled={verifying}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white text-xs font-semibold text-zinc-950 transition-transform hover:scale-[1.01] disabled:opacity-50"
             >
-              Unlock Curator Portal
+              {verifying ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" /> Authenticating...
+                </>
+              ) : (
+                "Authenticate"
+              )}
             </button>
           </form>
         </motion.div>
@@ -289,6 +378,9 @@ export default function AdminCuratorPage() {
         <div>
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300">
             <ShieldCheck className="size-3.5" /> Curator Command Center
+            {adminEmail && (
+              <span className="text-zinc-400">· {adminEmail}</span>
+            )}
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             Roster Moderation.
@@ -325,6 +417,14 @@ export default function AdminCuratorPage() {
             aria-label="Refresh database"
           >
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-xs font-medium text-rose-200 hover:bg-rose-500/20"
+          >
+            <LogOut className="size-3.5" /> Sign Out
           </button>
         </div>
       </div>
