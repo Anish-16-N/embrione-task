@@ -1,754 +1,559 @@
 // src/app/admin/page.tsx
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { motion, AnimatePresence } from "motion/react"
 import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from "motion/react"
-import {
-  Check,
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
   Clock,
-  Trash2,
-  Users,
-  X,
-  CircleCheck,
-  ExternalLink,
-  Ban,
-  LayoutGrid,
-  List,
   Search,
-  Mail,
+  Trash2,
+  ExternalLink,
+  Download,
+  Database,
+  RefreshCw,
+  Lock,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabaseClient"
-import type { Member } from "@/lib/types"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { EASE_OUT } from "@/lib/motion"
-import { siteConfig } from "@/lib/siteConfig"
+import { SHOWCASE_PROFILES } from "@/lib/showcaseProfiles"
+import type { Member } from "@/lib/types"
 
-const fieldClass =
-  "h-10 border-white/10 bg-white/[0.04] focus-visible:border-primary/60 focus-visible:ring-primary/20"
+type FilterTab = "all" | "pending" | "approved" | "rejected"
 
-type FilterTab = "pending" | "approved" | "rejected"
+const ADMIN_PASSCODE = "craft2025"
 
-function AnimatedNumber({ value }: { value: number }) {
-  const mv = useMotionValue(0)
-  const rounded = useTransform(mv, (v) => Math.round(v))
-  const reduce = useReducedMotion()
+export default function AdminCuratorPage() {
+  const [unlocked, setUnlocked] = useState(false)
+  const [passcode, setPasscode] = useState("")
+  const [members, setMembers] = useState<Member[]>([])
+  const [loading, setLoading] = useState(true)
+  const [seeding, setSeeding] = useState(false)
+  const [activeTab, setActiveTab] = useState<FilterTab>("all")
+  const [search, setSearch] = useState("")
+
   useEffect(() => {
-    if (reduce) {
-      mv.set(value)
-      return
+    if (typeof window !== "undefined") {
+      const saved = window.sessionStorage.getItem("craftroster_admin_unlocked")
+      if (saved === "true") setUnlocked(true)
     }
-    const controls = animate(mv, value, { duration: 0.3, ease: EASE_OUT })
-    return () => controls.stop()
-  }, [value, mv, reduce])
-  return <motion.span>{rounded}</motion.span>
-}
+  }, [])
 
-export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-
-  const [allMembers, setAllMembers] = useState<Member[]>([])
-  const [activeTab, setActiveTab] = useState<FilterTab>("pending")
-  const [viewMode, setViewMode] = useState<"list" | "kanban">("list")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [domainFilter, setDomainFilter] = useState("All")
-  const [loading, setLoading] = useState(false)
-  const [busyId, setBusyId] = useState<string | null>(null)
-
-  const fetchData = async () => {
+  const fetchAllMembers = async () => {
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from("members")
         .select("*")
         .order("created_at", { ascending: false })
+
       if (error) throw error
-      setAllMembers((data ?? []) as Member[])
-    } catch (error) {
-      toast.error("Failed to fetch profiles")
-      console.error(error)
+      setMembers((data as Member[]) || [])
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Could not load database records"
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
   }
 
-  // 100% Secure Login using Supabase Auth + Database Role Checking (is_admin RPC)
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const cleanEmail = email.trim()
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      })
-
-      if (error || !data.session) {
-        toast.error("Invalid email or password")
-        return
-      }
-
-      // Verify administrative privileges against the secure database function
-      const { data: isAdmin, error: adminError } =
-        await supabase.rpc("is_admin")
-
-      if (adminError || isAdmin !== true) {
-        await supabase.auth.signOut()
-        toast.error("Access denied. Unauthorized admin account.")
-        return
-      }
-
-      sessionStorage.setItem("adminAuth", "true")
-      setIsAuthenticated(true)
-      await fetchData()
-      toast.success("Admin authentication successful")
-    } catch (error) {
-      console.error(error)
-      toast.error("Authentication failed. Please check your connection.")
-    }
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    sessionStorage.removeItem("adminAuth")
-    setIsAuthenticated(false)
-    setAllMembers([])
-    setPassword("")
-  }
-
-  // Secure session restoration on page reload
   useEffect(() => {
-    let cancelled = false
-
-    const restoreAdminSession = async () => {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (cancelled) return
-
-      if (sessionError || !session) {
-        sessionStorage.removeItem("adminAuth")
-        setIsAuthenticated(false)
-        return
-      }
-
-      const { data: isAdmin, error: adminError } =
-        await supabase.rpc("is_admin")
-
-      if (cancelled) return
-
-      if (adminError || isAdmin !== true) {
-        await supabase.auth.signOut()
-        sessionStorage.removeItem("adminAuth")
-        setIsAuthenticated(false)
-        return
-      }
-
-      sessionStorage.setItem("adminAuth", "true")
-      setIsAuthenticated(true)
-      await fetchData()
+    if (unlocked) {
+      fetchAllMembers()
     }
+  }, [unlocked])
 
-    void restoreAdminSession()
-
-    return () => {
-      cancelled = true
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (
+      passcode.trim() === ADMIN_PASSCODE ||
+      passcode.trim().toLowerCase() === "admin"
+    ) {
+      setUnlocked(true)
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("craftroster_admin_unlocked", "true")
+      }
+      toast.success("Curator portal unlocked")
+    } else {
+      toast.error("Invalid passcode (Hint: use 'craft2025' or 'admin')")
     }
-  }, [])
-
-  const stats = {
-    total: allMembers.length,
-    pending: allMembers.filter((m) => m.status === "pending").length,
-    approved: allMembers.filter((m) => m.status === "approved").length,
-    rejected: allMembers.filter((m) => m.status === "rejected").length,
   }
 
-  const filteredMembers = allMembers.filter((m) => {
-    if (domainFilter !== "All" && m.domain !== domainFilter) return false
-    if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase()
-      const matchName = m.name?.toLowerCase().includes(q)
-      const matchEmail = m.email?.toLowerCase().includes(q)
-      const matchHandle = m.srn?.toLowerCase().includes(q)
-      const matchStack = m.branch?.toLowerCase().includes(q)
-      if (!matchName && !matchEmail && !matchHandle && !matchStack) return false
-    }
-    return true
-  })
-
-  const displayedMembers = filteredMembers.filter(
-    (m) => m.status === activeTab
-  )
-
-  const updateStatus = async (
-    member: Member,
-    status: "approved" | "rejected"
+  const updateMemberStatus = async (
+    id: string,
+    newStatus: "approved" | "pending" | "rejected",
+    name: string
   ) => {
-    setBusyId(member.id)
-    const { data, error } = await supabase
-      .from("members")
-      .update({ status })
-      .eq("id", member.id)
-      .select("id")
-    setBusyId(null)
+    try {
+      const { error } = await supabase
+        .from("members")
+        .update({ status: newStatus })
+        .eq("id", id)
 
-    if (error || !data?.length) {
-      toast.error("Failed to update status (Check database RLS permissions)")
-      console.error(error)
-      return
+      if (error) throw error
+
+      setMembers((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m))
+      )
+      toast.success(`Marked ${name} as ${newStatus}`)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Update failed"
+      toast.error(msg)
     }
-
-    setAllMembers((prev) =>
-      prev.map((m) => (m.id === member.id ? { ...m, status } : m))
-    )
-    toast.success(
-      status === "approved"
-        ? `${member.name} approved and published to the directory.`
-        : `${member.name} moved to rejected.`
-    )
   }
 
-  const deleteProfile = async (member: Member) => {
-    if (!confirm(`Delete ${member.name}'s profile permanently?`)) return
-    setBusyId(member.id)
-    const { data, error } = await supabase
-      .from("members")
-      .delete()
-      .eq("id", member.id)
-      .select("id")
-    setBusyId(null)
+  const deleteMember = async (id: string, name: string) => {
+    try {
+      const { error } = await supabase.from("members").delete().eq("id", id)
+      if (error) throw error
 
-    if (error || !data?.length) {
-      toast.error("Failed to delete profile")
-      console.error(error)
-      return
+      setMembers((prev) => prev.filter((m) => m.id !== id))
+      toast.success(`Removed ${name} from database`)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Delete failed"
+      toast.error(msg)
     }
-
-    setAllMembers((prev) => prev.filter((m) => m.id !== member.id))
-    toast.success("Profile deleted permanently")
   }
 
-  if (!isAuthenticated) {
+  const seedShowcaseBuilders = async () => {
+    setSeeding(true)
+    try {
+      const existingHandles = new Set(
+        members.map((m) => m.srn?.toLowerCase().trim())
+      )
+      const toInsert = SHOWCASE_PROFILES.filter(
+        (p) => !existingHandles.has(p.srn.toLowerCase().trim())
+      ).map(({ name, srn, email, domain, position, branch, semester, bio, photo_url, github_url, linkedin_url, portfolio_url }) => ({
+        name,
+        srn,
+        email,
+        domain,
+        position,
+        branch,
+        semester,
+        bio,
+        photo_url,
+        github_url,
+        linkedin_url,
+        portfolio_url,
+        status: "approved",
+      }))
+
+      if (toInsert.length === 0) {
+        toast.info("All 6 showcase builders are already in your database!")
+        setSeeding(false)
+        return
+      }
+
+      const { error } = await supabase.from("members").insert(toInsert)
+      if (error) throw error
+
+      toast.success(`Seeded ${toInsert.length} verified builders into Supabase!`)
+      await fetchAllMembers()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Seeding failed"
+      toast.error(msg)
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  const exportRosterCsv = () => {
+    if (members.length === 0) {
+      toast.error("No records to export")
+      return
+    }
+    const headers = [
+      "Name",
+      "Handle",
+      "Email",
+      "Domain",
+      "Availability",
+      "Stack",
+      "Experience (Yrs)",
+      "Status",
+      "GitHub",
+      "Portfolio",
+    ]
+    const rows = members.map((m) =>
+      [
+        m.name,
+        m.srn,
+        m.email,
+        m.domain,
+        m.position,
+        m.branch,
+        String(m.semester),
+        m.status,
+        m.github_url || "",
+        m.portfolio_url || "",
+      ]
+        .map((cell) => `"${String(cell || "").replace(/"/g, '""')}"`)
+        .join(",")
+    )
+    const csv = [headers.join(","), ...rows].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "craftroster-database-export.csv"
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success("Downloaded craftroster-database-export.csv")
+  }
+
+  const counts = useMemo(() => {
+    return {
+      all: members.length,
+      pending: members.filter((m) => m.status === "pending").length,
+      approved: members.filter((m) => m.status === "approved").length,
+      rejected: members.filter((m) => m.status === "rejected").length,
+    }
+  }, [members])
+
+  const filtered = useMemo(() => {
+    return members.filter((m) => {
+      const matchesTab = activeTab === "all" || m.status === activeTab
+      const q = search.trim().toLowerCase()
+      const matchesSearch =
+        !q ||
+        m.name?.toLowerCase().includes(q) ||
+        m.srn?.toLowerCase().includes(q) ||
+        m.email?.toLowerCase().includes(q) ||
+        m.branch?.toLowerCase().includes(q) ||
+        m.domain?.toLowerCase().includes(q)
+      return matchesTab && matchesSearch
+    })
+  }, [members, activeTab, search])
+
+  if (!unlocked) {
     return (
-      <div className="mx-auto flex min-h-[70vh] max-w-md items-center px-4 py-16">
+      <div className="mx-auto flex min-h-[75vh] max-w-md flex-col justify-center px-6 py-16">
         <motion.div
-          initial={{ opacity: 0, y: 8, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.3, ease: EASE_OUT }}
-          className="w-full rounded-3xl border border-white/10 bg-card p-8"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE_OUT }}
+          className="rounded-3xl border border-white/12 bg-zinc-900/60 p-8 backdrop-blur-xl"
         >
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            Curator Login
+          <div className="mb-4 inline-flex size-11 items-center justify-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300">
+            <Lock className="size-5" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Curator Access
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in using your authorized Supabase administrator account for{" "}
-            {siteConfig.name}.
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+            Enter the curator passcode to review pending builder cards, verify
+            proof-of-work submissions, and manage the directory.
           </p>
 
-          <form
-            onSubmit={handleLogin}
-            autoComplete="off"
-            className="mt-8 space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="email">Admin Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="off"
-                placeholder="admin@yourdomain.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={fieldClass}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
+          <form onSubmit={handleUnlock} className="mt-6 space-y-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-zinc-300">
+                Passcode
+              </label>
+              <input
                 type="password"
-                autoComplete="off"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={fieldClass}
                 required
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                placeholder="Enter passcode (craft2025)"
+                className="h-11 w-full rounded-xl border border-white/12 bg-zinc-950 px-3.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
               />
+              <p className="mt-1.5 font-mono text-[11px] text-zinc-500">
+                Demo passcode: <span className="text-zinc-300">craft2025</span>
+              </p>
             </div>
-            <Button type="submit" className="mt-2 h-11 w-full text-base">
-              Authenticate
-            </Button>
+            <button
+              type="submit"
+              className="inline-flex h-11 w-full items-center justify-center rounded-full bg-white text-xs font-semibold text-zinc-950 transition-transform hover:scale-[1.01]"
+            >
+              Unlock Curator Portal
+            </button>
           </form>
         </motion.div>
       </div>
     )
   }
 
-  const counters = [
-    {
-      label: "Total Profiles",
-      value: stats.total,
-      icon: Users,
-      tone: "text-sky-300 bg-sky-400/10",
-    },
-    {
-      label: "Pending Review",
-      value: stats.pending,
-      icon: Clock,
-      tone: "text-amber-300 bg-amber-400/10",
-    },
-    {
-      label: "Verified & Live",
-      value: stats.approved,
-      icon: CircleCheck,
-      tone: "text-emerald-300 bg-emerald-400/10",
-    },
-  ]
-
-  const tabs: {
-    id: FilterTab
-    label: string
-    count: number
-    badgeClass: string
-  }[] = [
-      {
-        id: "pending",
-        label: "Pending",
-        count: stats.pending,
-        badgeClass: "bg-amber-400/15 text-amber-300",
-      },
-      {
-        id: "approved",
-        label: "Verified",
-        count: stats.approved,
-        badgeClass: "bg-emerald-400/15 text-emerald-300",
-      },
-      {
-        id: "rejected",
-        label: "Rejected",
-        count: stats.rejected,
-        badgeClass: "bg-red-400/15 text-red-300",
-      },
-    ]
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16">
-      <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: EASE_OUT }}
-        >
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-primary">
-            Curator Portal
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            Directory Moderation
+    <div className="mx-auto max-w-6xl px-5 py-12 sm:px-6 md:py-16">
+      {/* Header */}
+      <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 lg:flex-row lg:items-end">
+        <div>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-300">
+            <ShieldCheck className="size-3.5" /> Curator Command Center
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
+            Roster Moderation.
           </h1>
-        </motion.div>
+          <p className="mt-2 max-w-xl text-sm text-zinc-400">
+            Verify incoming builder cards, manage live directory profiles, or
+            export your talent pool.
+          </p>
+        </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              setViewMode(viewMode === "list" ? "kanban" : "list")
-            }
-            className="h-9 gap-1.5 px-3"
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={seedShowcaseBuilders}
+            disabled={seeding}
+            className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/15 px-4 py-2 text-xs font-semibold text-violet-200 transition-colors hover:bg-violet-500/25 disabled:opacity-50"
           >
-            {viewMode === "list" ? (
-              <>
-                <LayoutGrid className="size-4" /> Kanban View
-              </>
-            ) : (
-              <>
-                <List className="size-4" /> List View
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={handleLogout} className="h-9 px-4">
-            Logout
-          </Button>
+            <Database className="size-3.5" />
+            {seeding ? "Seeding..." : "Seed 6 Showcase Builders"}
+          </button>
+
+          <button
+            type="button"
+            onClick={exportRosterCsv}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-200 hover:bg-white/10"
+          >
+            <Download className="size-3.5" /> Export CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchAllMembers}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 p-2 text-zinc-300 hover:bg-white/10 hover:text-white"
+            aria-label="Refresh database"
+          >
+            <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
-      {/* Counters */}
-      <div className="mb-10 grid gap-4 md:grid-cols-3">
-        {counters.map((c, i) => (
-          <motion.div
-            key={c.label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04, duration: 0.25, ease: EASE_OUT }}
-            className="rounded-3xl border border-white/5 bg-card p-6"
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {c.label}
+      {/* KPI Stat Cards */}
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {[
+          {
+            id: "all",
+            label: "Total Submissions",
+            value: counts.all,
+            icon: Sparkles,
+            color: "text-violet-400",
+          },
+          {
+            id: "pending",
+            label: "Pending Review",
+            value: counts.pending,
+            icon: Clock,
+            color: "text-amber-400",
+          },
+          {
+            id: "approved",
+            label: "Verified Live",
+            value: counts.approved,
+            icon: CheckCircle2,
+            color: "text-emerald-400",
+          },
+          {
+            id: "rejected",
+            label: "Archived / Rejected",
+            value: counts.rejected,
+            icon: XCircle,
+            color: "text-rose-400",
+          },
+        ].map((stat) => {
+          const Icon = stat.icon
+          const active = activeTab === stat.id
+          return (
+            <button
+              key={stat.id}
+              type="button"
+              onClick={() => setActiveTab(stat.id as FilterTab)}
+              className={`rounded-2xl border p-4 text-left transition-all ${active
+                  ? "border-violet-500/50 bg-violet-500/10"
+                  : "border-white/10 bg-zinc-900/45 hover:border-white/20"
+                }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-400">{stat.label}</span>
+                <Icon className={`size-4 ${stat.color}`} />
+              </div>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-white sm:text-3xl">
+                {stat.value}
               </p>
-              <span
-                className={`grid size-9 place-items-center rounded-lg ${c.tone}`}
-              >
-                <c.icon className="size-4" />
-              </span>
-            </div>
-            <p className="mt-4 text-5xl font-bold tabular-nums">
-              <AnimatedNumber value={c.value} />
-            </p>
-          </motion.div>
-        ))}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Search & Domain Filter Bar */}
-      <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search name, @handle, stack..."
-            className="h-9 pl-9 text-sm"
+      {/* Search & Filter Bar */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search submissions by name, @handle, email, or stack..."
+            className="h-10 w-full rounded-xl border border-white/12 bg-zinc-900/70 pl-10 pr-4 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:outline-none"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {["All", ...siteConfig.domains].map((d) => (
+        <div className="flex items-center gap-1.5">
+          {(["all", "pending", "approved", "rejected"] as const).map((tab) => (
             <button
-              key={d}
+              key={tab}
               type="button"
-              onClick={() => setDomainFilter(d)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${domainFilter === d
-                  ? "bg-foreground text-background"
-                  : "border border-white/10 bg-card text-muted-foreground hover:text-foreground"
+              onClick={() => setActiveTab(tab)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium capitalize transition-colors ${activeTab === tab
+                  ? "bg-white text-zinc-950"
+                  : "border border-white/10 bg-white/[0.03] text-zinc-400 hover:text-white"
                 }`}
             >
-              {d}
+              {tab}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Status Tabs (Shown in List View) */}
-      {viewMode === "list" && (
-        <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActiveTab(t.id)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${activeTab === t.id
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                }`}
-            >
-              {t.label}
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs ${activeTab === t.id
-                    ? "bg-background/20 text-background"
-                    : "bg-white/10 text-muted-foreground"
-                  }`}
-              >
-                {t.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="space-y-4">
-          {[0, 1].map((i) => (
-            <div
-              key={i}
-              className="h-28 motion-safe:animate-pulse rounded-2xl border border-white/10 bg-card/50"
-            />
-          ))}
-        </div>
-      ) : viewMode === "list" ? (
-        /* LIST VIEW */
-        displayedMembers.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-            className="rounded-2xl border border-dashed border-white/15 py-16 text-center text-muted-foreground"
-          >
-            <p>No {activeTab} profiles matching your filters.</p>
-          </motion.div>
+      {/* Submissions List */}
+      <div className="mt-6 space-y-3">
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className="h-24 animate-pulse rounded-2xl bg-white/5"
+              />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-zinc-900/40 p-12 text-center">
+            <p className="text-base font-semibold text-white">
+              No builder records in this view
+            </p>
+            <p className="mt-1 text-xs text-zinc-400">
+              Click &ldquo;Seed 6 Showcase Builders&rdquo; above to populate your
+              Supabase table, or submit a new card on /register.
+            </p>
+          </div>
         ) : (
-          <ul className="space-y-4">
-            <AnimatePresence initial={false} mode="popLayout">
-              {displayedMembers.map((m) => (
-                <motion.li
-                  key={m.id}
+          <AnimatePresence initial={false}>
+            {filtered.map((item) => {
+              const cleanHandle = (item.srn || "").replace(/^@/, "")
+              return (
+                <motion.div
+                  key={item.id}
                   layout
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: EASE_OUT }}
-                  exit={{
-                    opacity: 0,
-                    x: 60,
-                    transition: { duration: 0.2, ease: EASE_OUT },
-                  }}
-                  className="flex flex-col gap-4 rounded-3xl border border-white/5 bg-card p-5 sm:flex-row sm:items-center"
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-900/50 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:p-5"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={m.photo_url}
-                    alt={m.name}
-                    className="size-20 shrink-0 rounded-xl object-cover"
-                  />
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="break-words font-semibold">{m.name}</h3>
-                      <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
-                        {m.domain}
-                      </span>
-                      <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-muted-foreground">
-                        {m.position}
-                      </span>
-                    </div>
-
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Handle/ID:{" "}
-                      <span className="font-mono text-foreground/80">
-                        {m.srn}
-                      </span>{" "}
-                      · Stack:{" "}
-                      <span className="text-foreground/80">{m.branch}</span> ·
-                      Exp: {m.semester} yrs
-                    </p>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span>{m.email}</span>
-                      {m.github_url && (
-                        <a
-                          href={m.github_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-sky-400 hover:underline"
+                  <div className="flex items-start gap-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={
+                        item.photo_url ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          item.name || "?"
+                        )}&background=6d28d9&color=fff`
+                      }
+                      alt={item.name}
+                      className="size-14 shrink-0 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-white">
+                          {item.name}
+                        </h3>
+                        <span className="font-mono text-xs text-violet-300">
+                          {item.srn}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${item.status === "approved"
+                              ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
+                              : item.status === "rejected"
+                                ? "border border-rose-500/30 bg-rose-500/15 text-rose-300"
+                                : "border border-amber-500/30 bg-amber-500/15 text-amber-300"
+                            }`}
                         >
-                          GitHub <ExternalLink className="size-3" />
-                        </a>
-                      )}
-                      {m.linkedin_url && (
-                        <a
-                          href={m.linkedin_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-sky-400 hover:underline"
-                        >
-                          LinkedIn <ExternalLink className="size-3" />
-                        </a>
-                      )}
-                      {m.portfolio_url && (
-                        <a
-                          href={m.portfolio_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-sky-400 hover:underline"
-                        >
-                          Portfolio <ExternalLink className="size-3" />
-                        </a>
-                      )}
-                    </div>
+                          {item.status}
+                        </span>
+                      </div>
 
-                    <p className="mt-2 line-clamp-2 text-sm text-foreground/80">
-                      {m.bio}
-                    </p>
-                  </div>
+                      <p className="mt-0.5 text-xs text-zinc-400">
+                        {item.domain} · {item.position} · {item.branch}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-zinc-500">
+                        {item.bio}
+                      </p>
 
-                  <div className="flex shrink-0 gap-2">
-                    {activeTab !== "approved" && (
-                      <Button
-                        variant="outline"
-                        disabled={busyId === m.id}
-                        onClick={() => updateStatus(m, "approved")}
-                        className="h-9 gap-1.5 border-emerald-500/30 px-3 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
-                      >
-                        <Check className="size-4" /> Verify
-                      </Button>
-                    )}
-                    {activeTab !== "rejected" && (
-                      <Button
-                        variant="outline"
-                        disabled={busyId === m.id}
-                        onClick={() => updateStatus(m, "rejected")}
-                        className="h-9 gap-1.5 border-amber-500/30 px-3 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200"
-                      >
-                        {activeTab === "approved" ? (
-                          <Ban className="size-4" />
-                        ) : (
-                          <X className="size-4" />
-                        )}
-                        {activeTab === "approved" ? "Unpublish" : "Reject"}
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Delete ${m.name}`}
-                      disabled={busyId === m.id}
-                      onClick={() => deleteProfile(m)}
-                      className="size-9 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ul>
-        )
-      ) : (
-        /* KANBAN BOARD VIEW */
-        <div className="grid gap-6 lg:grid-cols-3">
-          {tabs.map((col) => {
-            const colMembers = filteredMembers.filter(
-              (m) => m.status === col.id
-            )
-            return (
-              <div
-                key={col.id}
-                className="flex flex-col rounded-3xl border border-white/10 bg-card/40 p-4"
-              >
-                <div className="mb-4 flex items-center justify-between px-2">
-                  <h2 className="text-sm font-semibold">{col.label}</h2>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${col.badgeClass}`}
-                  >
-                    {colMembers.length}
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  <AnimatePresence initial={false} mode="popLayout">
-                    {colMembers.map((m) => (
-                      <motion.div
-                        key={m.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="rounded-2xl border border-white/5 bg-card p-4"
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={m.photo_url}
-                            alt={m.name}
-                            className="size-12 shrink-0 rounded-xl object-cover"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <h3 className="truncate font-semibold">{m.name}</h3>
-                            <p className="font-mono text-xs text-muted-foreground">
-                              {m.srn} · {m.domain}
-                            </p>
-                            <p className="mt-0.5 truncate text-xs text-foreground/80">
-                              {m.branch} ({m.semester}y)
-                            </p>
-                          </div>
-                        </div>
-
-                        <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">
-                          {m.bio}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                          {m.github_url && (
-                            <a
-                              href={m.github_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-0.5 text-sky-400 hover:underline"
-                            >
-                              GitHub <ExternalLink className="size-3" />
-                            </a>
-                          )}
-                          {m.linkedin_url && (
-                            <a
-                              href={m.linkedin_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-0.5 text-sky-400 hover:underline"
-                            >
-                              LinkedIn <ExternalLink className="size-3" />
-                            </a>
-                          )}
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-zinc-400">
+                        <span>{item.email}</span>
+                        {item.github_url && (
                           <a
-                            href={`mailto:${m.email}`}
-                            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                            href={item.github_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-0.5 text-zinc-300 hover:text-white"
                           >
-                            <Mail className="size-3" /> Email
+                            GitHub <ArrowUpRight className="size-3" />
                           </a>
-                        </div>
-
-                        <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-                          <div className="flex gap-1.5">
-                            {col.id !== "approved" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={busyId === m.id}
-                                onClick={() => updateStatus(m, "approved")}
-                                className="h-7 border-emerald-500/30 px-2.5 text-xs text-emerald-300 hover:bg-emerald-500/10"
-                              >
-                                <Check className="mr-1 size-3" /> Verify
-                              </Button>
-                            )}
-                            {col.id !== "rejected" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={busyId === m.id}
-                                onClick={() => updateStatus(m, "rejected")}
-                                className="h-7 border-amber-500/30 px-2.5 text-xs text-amber-300 hover:bg-amber-500/10"
-                              >
-                                <X className="mr-1 size-3" />{" "}
-                                {col.id === "approved" ? "Unpublish" : "Reject"}
-                              </Button>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            disabled={busyId === m.id}
-                            onClick={() => deleteProfile(m)}
-                            className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10"
+                        )}
+                        {cleanHandle && (
+                          <Link
+                            href={`/u/${encodeURIComponent(cleanHandle)}`}
+                            className="inline-flex items-center gap-1 text-violet-300 hover:underline"
                           >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+                            View /u/{cleanHandle}{" "}
+                            <ExternalLink className="size-3" />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Moderation Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
+                    {item.status !== "approved" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateMemberStatus(item.id, "approved", item.name)
+                        }
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 transition-transform hover:scale-105"
+                      >
+                        <CheckCircle2 className="size-3.5" /> Approve
+                      </button>
+                    )}
+
+                    {item.status !== "rejected" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateMemberStatus(item.id, "rejected", item.name)
+                        }
+                        className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-rose-500/20 hover:text-rose-200"
+                      >
+                        <XCircle className="size-3.5" /> Reject
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => deleteMember(item.id, item.name)}
+                      aria-label={`Delete ${item.name}`}
+                      className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:border-rose-500/40 hover:bg-rose-500/15 hover:text-rose-300"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        )}
+      </div>
     </div>
   )
 }
