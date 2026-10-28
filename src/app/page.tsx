@@ -1,8 +1,8 @@
 // src/app/page.tsx
 "use client"
 
-import MagneticButton from "@/components/MagneticButton"
 import VerificationWorkflow from "@/components/VerificationWorkflow"
+import MagneticButton from "@/components/MagneticButton"
 import MemberCard from "@/components/MemberCard"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -350,51 +350,7 @@ export default function Home() {
       {/* Interactive Bento Grid */}
       <DomainsSection />
 
-      {/* 3-Step How It Works Section */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
-            Workflow
-          </p>
-          <h2
-            className={`${spaceGrotesk.className} mt-2 text-3xl font-bold tracking-tight sm:text-5xl`}
-          >
-            How verification works<span className="text-violet-400">.</span>
-          </h2>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {STEPS.map((s, idx) => (
-            <motion.div
-              key={s.step}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.3, delay: idx * 0.08, ease: EASE_OUT }}
-              className="group relative flex flex-col justify-between rounded-3xl border border-white/10 bg-zinc-900/50 p-8 backdrop-blur-md transition-colors hover:border-violet-500/40"
-            >
-              <div className="flex items-center justify-between">
-                <span className="grid size-12 place-items-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-300">
-                  <s.icon className="size-5" />
-                </span>
-                <span className="font-mono text-2xl font-semibold text-white/20">
-                  {s.step}
-                </span>
-              </div>
-              <div className="mt-10">
-                <h3
-                  className={`${spaceGrotesk.className} text-xl font-semibold tracking-tight`}
-                >
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  {s.description}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+      <VerificationWorkflow />
 
       {/* FAQ Accordion */}
       <section className="mx-auto max-w-4xl px-6 py-24">
