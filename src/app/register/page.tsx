@@ -58,12 +58,56 @@ export default function RegisterPage() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB")
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10MB")
       return
     }
-    setPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
+
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      const maxDim = 900
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+
+      const ctx = canvas.getContext("2d")
+      if (!ctx) {
+        setPhotoFile(file)
+        setPhotoPreview(objectUrl)
+        return
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            setPhotoFile(file)
+            setPhotoPreview(objectUrl)
+            return
+          }
+          const webpFile = new File(
+            [blob],
+            file.name.replace(/\.[^.]+$/, "") + ".webp",
+            { type: "image/webp" }
+          )
+          const savedPct = Math.max(
+            1,
+            Math.round((1 - webpFile.size / file.size) * 100)
+          )
+          setPhotoFile(webpFile)
+          setPhotoPreview(URL.createObjectURL(webpFile))
+          if (webpFile.size < file.size) {
+            toast.success(
+              `Compressed to WebP (${(webpFile.size / 1024).toFixed(0)}KB · -${savedPct}%) ⚡`
+            )
+          }
+        },
+        "image/webp",
+        0.84
+      )
+    }
+    img.src = objectUrl
   }
 
   const handleGitHubAutofill = async () => {
@@ -435,8 +479,8 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() => toggleSkillChip(skill)}
                     className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-all ${selected
-                        ? "border-violet-400/60 bg-violet-500/25 text-violet-200"
-                        : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/25 hover:text-zinc-200"
+                      ? "border-violet-400/60 bg-violet-500/25 text-violet-200"
+                      : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/25 hover:text-zinc-200"
                       }`}
                   >
                     + {skill}

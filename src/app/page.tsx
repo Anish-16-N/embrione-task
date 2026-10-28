@@ -2,6 +2,7 @@
 "use client"
 
 import MagneticButton from "@/components/MagneticButton"
+import VerificationWorkflow from "@/components/VerificationWorkflow"
 import MemberCard from "@/components/MemberCard"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -197,8 +198,8 @@ export default function Home() {
                 ease: EASE_OUT,
               }}
               className={`inline-block cursor-default transition-transform duration-200 ease-out hover:-translate-y-2 ${i >= 5
-                  ? "bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300 bg-clip-text text-transparent"
-                  : "text-white hover:text-violet-300"
+                ? "bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300 bg-clip-text text-transparent"
+                : "text-white hover:text-violet-300"
                 }`}
             >
               {ch}
