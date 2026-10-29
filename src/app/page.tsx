@@ -1,6 +1,6 @@
 // src/app/page.tsx
 "use client"
-
+import TiltCard3D from "@/components/TiltCard3D"
 import VerificationWorkflow from "@/components/VerificationWorkflow"
 import MagneticButton from "@/components/MagneticButton"
 import MemberCard from "@/components/MemberCard"
@@ -105,30 +105,6 @@ function Statement({ text }: { text: string }) {
   )
 }
 
-const STEPS = [
-  {
-    step: "01",
-    title: "Craft Your Card",
-    description:
-      "Customize your builder card with a live interactive preview. Your profile photo is automatically compressed to WebP right in your browser.",
-    icon: Sparkles,
-  },
-  {
-    step: "02",
-    title: "Get Verified",
-    description:
-      "Our curators review your GitHub, portfolio, or LinkedIn to keep the directory signal-to-noise ratio high and spam-free.",
-    icon: ShieldCheck,
-  },
-  {
-    step: "03",
-    title: "Get Discovered",
-    description:
-      "Go live on the public roster with a shareable profile link, domain badges, and one-click contact for founders and recruiters.",
-    icon: Globe2,
-  },
-]
-
 const FAQS = [
   {
     q: "Who can claim a card on CraftRoster?",
@@ -198,8 +174,8 @@ export default function Home() {
                 ease: EASE_OUT,
               }}
               className={`inline-block cursor-default transition-transform duration-200 ease-out hover:-translate-y-2 ${i >= 5
-                ? "bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300 bg-clip-text text-transparent"
-                : "text-white hover:text-violet-300"
+                  ? "bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300 bg-clip-text text-transparent"
+                  : "text-white hover:text-violet-300"
                 }`}
             >
               {ch}
@@ -320,20 +296,22 @@ export default function Home() {
                 ease: EASE_OUT,
               }}
             >
-              <MemberCard
-                name={m.name}
-                handle={m.srn}
-                domain={m.domain}
-                position={m.position}
-                branch={m.branch}
-                semester={m.semester}
-                bio={m.bio}
-                photoUrl={m.photo_url}
-                linkedin={m.linkedin_url}
-                github={m.github_url}
-                portfolio={m.portfolio_url}
-                email={m.email}
-              />
+              <TiltCard3D>
+                <MemberCard
+                  name={m.name}
+                  handle={m.srn}
+                  domain={m.domain}
+                  position={m.position}
+                  branch={m.branch}
+                  semester={m.semester}
+                  bio={m.bio}
+                  photoUrl={m.photo_url}
+                  linkedin={m.linkedin_url}
+                  github={m.github_url}
+                  portfolio={m.portfolio_url}
+                  email={m.email}
+                />
+              </TiltCard3D>
             </motion.div>
           ))}
         </div>
