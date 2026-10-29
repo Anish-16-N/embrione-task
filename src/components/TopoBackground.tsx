@@ -1,7 +1,7 @@
 // src/components/TopoBackground.tsx
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const VERTEX_SHADER = `
   attribute vec2 position;
@@ -42,25 +42,19 @@ const FRAGMENT_SHADER = `
     vec2 mouseUV = u_mouse / u_resolution.xy;
     mouseUV.x *= u_resolution.x / u_resolution.y;
 
-    // Gentle cursor field displacement
     float dist = distance(aspectUV, mouseUV);
     float mouseInfluence = smoothstep(0.38, 0.0, dist);
     vec2 warpedUV = aspectUV + (aspectUV - mouseUV) * mouseInfluence * 0.08;
 
-    // Slow, calm topographic drift
     float t = u_time * 0.06;
     float n1 = noise(warpedUV * 2.2 + vec2(t, -t * 0.6));
     float n2 = noise(warpedUV * 4.2 - vec2(t * 0.4, t) + n1 * 0.45);
     float combined = n1 * 0.7 + n2 * 0.3;
 
-    // Ultra-thin contour isolines
     float bands = fract(combined * 6.5);
     float line = smoothstep(0.025, 0.0, abs(bands - 0.5) - 0.006);
 
-    // Base zinc-950 background (#09090b)
     vec3 baseColor = vec3(0.035, 0.035, 0.043);
-
-    // Monochrome zinc lines that subtly warm to violet near the cursor
     vec3 lineColor = mix(
       vec3(0.22, 0.22, 0.26),
       vec3(0.55, 0.44, 0.92),
@@ -76,8 +70,14 @@ const FRAGMENT_SHADER = `
 
 export default function TopoBackground() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    useEffect(() => {
+        if (!mounted) return
         const canvas = canvasRef.current
         if (!canvas) return
         const gl = canvas.getContext("webgl")
@@ -162,7 +162,9 @@ export default function TopoBackground() {
             window.removeEventListener("resize", handleResize)
             window.removeEventListener("mousemove", handleMouseMove)
         }
-    }, [])
+    }, [mounted])
+
+    if (!mounted) return null
 
     return (
         <canvas
