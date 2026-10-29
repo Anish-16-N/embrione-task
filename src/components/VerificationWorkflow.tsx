@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { motion } from "motion/react"
+import { motion, AnimatePresence } from "motion/react"
 import {
     Sparkles,
     ShieldCheck,
@@ -14,7 +14,7 @@ import {
     ArrowRight,
 } from "lucide-react"
 import { toast } from "sonner"
-import { EASE_OUT } from "@/lib/motion"
+import { EASE_OUT, SNAPPY_SPRING } from "@/lib/motion"
 
 type StepId = 1 | 2 | 3
 
@@ -70,7 +70,6 @@ export default function VerificationWorkflow() {
     const [prismIdx, setPrismIdx] = useState(0)
     const [liveViews, setLiveViews] = useState(419)
 
-    // Auto-cycle active step when Auto Orbit is enabled
     useEffect(() => {
         if (!autoOrbit) return
         const timer = setInterval(() => {
@@ -79,7 +78,6 @@ export default function VerificationWorkflow() {
         return () => clearInterval(timer)
     }, [autoOrbit])
 
-    // Subtle live view counter increment on Step 03
     useEffect(() => {
         const timer = setInterval(() => {
             setLiveViews((v) => (v >= 499 ? 419 : v + 1))
@@ -91,7 +89,6 @@ export default function VerificationWorkflow() {
 
     return (
         <section className="relative mx-auto max-w-5xl px-5 py-20 sm:px-6 md:py-28">
-            {/* Subtle architectural cross-grid background */}
             <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 -z-10 opacity-25"
@@ -102,7 +99,6 @@ export default function VerificationWorkflow() {
                 }}
             />
 
-            {/* Section Header */}
             <div className="max-w-3xl">
                 <p className="font-mono text-xs font-semibold uppercase tracking-[0.28em] text-violet-400">
                     Workflow
@@ -112,47 +108,55 @@ export default function VerificationWorkflow() {
                 </h2>
             </div>
 
-            {/* Interactive Control Console Bar */}
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-zinc-950/85 p-2.5 backdrop-blur-xl">
+            {/* Interactive Control Console Bar with Spring layoutId Indicator */}
+            <div className="surface-glass mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-zinc-950/85 p-2.5 backdrop-blur-xl">
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Auto Cycle Toggle + 01 / 02 / 03 Selector */}
                     <div className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-zinc-900/90 p-1">
                         <button
                             type="button"
                             onClick={() => setAutoOrbit((v) => !v)}
-                            className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:text-white"
+                            className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-300 hover:text-white"
                         >
                             <span
-                                className={`size-2 rounded-full ${autoOrbit
-                                        ? "bg-emerald-400 shadow-[0_0_8px_#34d399]"
-                                        : "bg-zinc-600"
+                                className={`size-2 rounded-full transition-colors duration-200 ${autoOrbit
+                                    ? "bg-emerald-400 shadow-[0_0_8px_#34d399]"
+                                    : "bg-zinc-600"
                                     }`}
                             />
                             Auto Orbit
                         </button>
 
-                        {([1, 2, 3] as const).map((step) => (
-                            <button
-                                key={step}
-                                type="button"
-                                onClick={() => {
-                                    setActiveStep(step)
-                                    setAutoOrbit(false)
-                                }}
-                                className={`rounded-lg px-2.5 py-1 font-mono text-xs font-semibold transition-all ${activeStep === step
-                                        ? "border border-white/20 bg-zinc-800 text-white shadow-sm"
-                                        : "text-zinc-400 hover:text-white"
-                                    }`}
-                            >
-                                0{step}
-                            </button>
-                        ))}
+                        {([1, 2, 3] as const).map((step) => {
+                            const isActive = activeStep === step
+                            return (
+                                <button
+                                    key={step}
+                                    type="button"
+                                    onClick={() => {
+                                        setActiveStep(step)
+                                        setAutoOrbit(false)
+                                    }}
+                                    className={`relative rounded-lg px-2.5 py-1 font-mono text-xs font-semibold transition-colors ${isActive ? "text-white" : "text-zinc-400 hover:text-white"
+                                        }`}
+                                >
+                                    {isActive && (
+                                        <motion.span
+                                            layoutId="workflow-step-pill"
+                                            transition={SNAPPY_SPRING}
+                                            className="absolute inset-0 rounded-lg border border-white/20 bg-zinc-800 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]"
+                                        />
+                                    )}
+                                    <span className="relative z-10 tabular-nums">0{step}</span>
+                                </button>
+                            )
+                        })}
                     </div>
 
-                    {/* Live Status Readout Pill */}
                     <div className="hidden items-center gap-2 rounded-xl border border-white/10 bg-zinc-900/70 px-3.5 py-1.5 font-mono text-xs text-zinc-400 sm:inline-flex">
                         <span>NODE</span>
-                        <span className="text-violet-300">0{activeStep} / 03</span>
+                        <span className="tabular-nums text-violet-300">
+                            0{activeStep} / 03
+                        </span>
                         <span className="text-zinc-600">·</span>
                         <span className="text-emerald-300">ACTIVE</span>
                     </div>
@@ -160,22 +164,34 @@ export default function VerificationWorkflow() {
 
                 <Link
                     href="/register"
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-emerald-400 px-4 py-2 text-xs font-bold text-zinc-950 shadow-[0_0_25px_rgba(52,211,153,0.3)] transition-transform hover:scale-[1.02]"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-emerald-400 px-4 py-2 text-xs font-bold text-zinc-950 shadow-[0_0_25px_rgba(52,211,153,0.28)] transition-transform duration-200 hover:scale-[1.02] active:scale-[0.97]"
                 >
                     <Sparkles className="size-3.5" /> Claim Your Card
                     <ArrowRight className="size-3.5" />
                 </Link>
             </div>
 
-            {/* Telemetry Status Strip */}
-            <div className="mt-3 rounded-2xl border border-white/10 bg-zinc-950/75 px-4 py-3 backdrop-blur-xl">
+            {/* Telemetry Status Strip with Emil Kowalski Blur-Morph Text Transition */}
+            <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/75 px-4 py-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
                 <div className="flex flex-wrap items-center gap-2.5 text-xs">
-                    <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
+                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-wider tabular-nums text-emerald-300">
                         PRISM NODE 0{activeStep} · ELEVATED
                     </span>
-                    <span className="line-clamp-1 font-mono text-xs text-zinc-300">
-                        {STEP_DESCRIPTIONS[activeStep]}
-                    </span>
+
+                    <div className="relative min-h-[20px] flex-1 overflow-hidden">
+                        <AnimatePresence mode="wait" initial={false}>
+                            <motion.span
+                                key={activeStep}
+                                initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+                                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                                exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+                                transition={{ duration: 0.2, ease: EASE_OUT }}
+                                className="block line-clamp-1 font-mono text-xs text-zinc-300"
+                            >
+                                {STEP_DESCRIPTIONS[activeStep]}
+                            </motion.span>
+                        </AnimatePresence>
+                    </div>
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 font-mono text-[11px] text-zinc-500">
                     <span>
@@ -187,40 +203,38 @@ export default function VerificationWorkflow() {
                 </div>
             </div>
 
-            {/* Vertical Stack of 3 Monolith Cards with Diamond Connectors */}
+            {/* Vertical Stack of 3 Monolith Cards */}
             <div className="mt-10 space-y-0">
                 {/* ==================== MONOLITH 01 ==================== */}
                 <motion.div
                     onMouseEnter={() => setActiveStep(1)}
                     onClick={() => setActiveStep(1)}
                     animate={{
-                        scale: activeStep === 1 ? 1.01 : 1,
+                        scale: activeStep === 1 ? 1.008 : 1,
+                        y: activeStep === 1 ? -2 : 0,
                     }}
-                    transition={{ duration: 0.25, ease: EASE_OUT }}
-                    className={`relative cursor-pointer rounded-3xl border p-6 transition-colors duration-300 sm:p-9 ${activeStep === 1
-                            ? "border-violet-500/45 bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-violet-950/25 shadow-[0_25px_70px_rgba(139,92,246,0.18)]"
-                            : "border-white/10 bg-zinc-950/80 hover:border-white/20"
+                    transition={{ duration: 0.24, ease: EASE_OUT }}
+                    className={`surface-glass relative cursor-pointer rounded-3xl border p-6 transition-colors duration-200 sm:p-9 ${activeStep === 1
+                        ? "border-violet-500/45 bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-violet-950/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16),0_25px_70px_rgba(139,92,246,0.18)]"
+                        : "border-white/10 bg-zinc-950/80 hover:border-white/20"
                         }`}
                 >
-                    {/* Top Row: Icon + 01 */}
                     <div className="flex items-center justify-between">
-                        <div className="grid size-12 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300">
+                        <div className="grid size-12 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]">
                             <Sparkles className="size-5" />
                         </div>
-                        <span className="font-mono text-3xl font-bold tracking-tight text-zinc-700 sm:text-4xl">
+                        <span className="font-mono text-3xl font-bold tracking-tight tabular-nums text-zinc-700 sm:text-4xl">
                             01
                         </span>
                     </div>
 
-                    {/* Interactive Live Builder Preview Widget */}
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/55 p-4 sm:p-5">
+                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/55 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:p-5">
                         <div className="flex items-center justify-between">
                             <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-300">
                                 <span className="size-2 rounded-full bg-violet-400" />
                                 LIVE BUILDER PREVIEW
                             </span>
 
-                            {/* Clickable Theme Dots */}
                             <div className="flex items-center gap-2">
                                 {PRISM_THEMES.map((theme, idx) => (
                                     <button
@@ -231,7 +245,7 @@ export default function VerificationWorkflow() {
                                             e.stopPropagation()
                                             setPrismIdx(idx)
                                         }}
-                                        className={`size-4 rounded-full transition-transform ${theme.dot
+                                        className={`size-4 rounded-full transition-transform duration-150 ${theme.dot
                                             } ${prismIdx === idx
                                                 ? `scale-110 ring-2 ${theme.ring} ring-offset-2 ring-offset-black`
                                                 : "opacity-60 hover:opacity-100"
@@ -241,12 +255,11 @@ export default function VerificationWorkflow() {
                             </div>
                         </div>
 
-                        {/* Inner Builder Identity Row */}
                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-zinc-900/75 p-3.5">
                             <div className="flex items-center gap-3.5">
                                 <div className="relative">
                                     <div
-                                        className={`grid size-12 place-items-center rounded-xl border font-bold ${activePrism.avatarBg}`}
+                                        className={`grid size-12 place-items-center rounded-xl border font-bold transition-colors duration-200 ${activePrism.avatarBg}`}
                                     >
                                         AK
                                     </div>
@@ -262,14 +275,22 @@ export default function VerificationWorkflow() {
                                 </div>
                             </div>
 
-                            <span className={`font-mono text-xs font-medium ${activePrism.badge}`}>
-                                {activePrism.name}
-                            </span>
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.span
+                                    key={activePrism.name}
+                                    initial={{ opacity: 0, y: 4, filter: "blur(3px)" }}
+                                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                                    exit={{ opacity: 0, y: -4, filter: "blur(3px)" }}
+                                    transition={{ duration: 0.16, ease: EASE_OUT }}
+                                    className={`font-mono text-xs font-medium ${activePrism.badge}`}
+                                >
+                                    {activePrism.name}
+                                </motion.span>
+                            </AnimatePresence>
                         </div>
 
-                        {/* WebP Compression Telemetry Bar */}
                         <div className="mt-3 rounded-xl border border-white/10 bg-zinc-900/50 p-3">
-                            <div className="flex items-center justify-between font-mono text-[11px]">
+                            <div className="flex items-center justify-between font-mono text-[11px] tabular-nums">
                                 <span className="text-zinc-400">RAW 2.4MB → 58KB WEBP</span>
                                 <span className="font-semibold text-emerald-400">● -97%</span>
                             </div>
@@ -281,7 +302,6 @@ export default function VerificationWorkflow() {
                         </div>
                     </div>
 
-                    {/* Copy Block */}
                     <div className="mt-7">
                         <h3 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                             Craft Your Card
@@ -311,25 +331,25 @@ export default function VerificationWorkflow() {
                     onMouseEnter={() => setActiveStep(2)}
                     onClick={() => setActiveStep(2)}
                     animate={{
-                        scale: activeStep === 2 ? 1.01 : 1,
+                        scale: activeStep === 2 ? 1.008 : 1,
+                        y: activeStep === 2 ? -2 : 0,
                     }}
-                    transition={{ duration: 0.25, ease: EASE_OUT }}
-                    className={`relative cursor-pointer rounded-3xl border p-6 transition-colors duration-300 sm:p-9 ${activeStep === 2
-                            ? "border-cyan-500/45 bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-cyan-950/20 shadow-[0_25px_70px_rgba(34,211,238,0.14)]"
-                            : "border-white/10 bg-zinc-950/80 hover:border-white/20"
+                    transition={{ duration: 0.24, ease: EASE_OUT }}
+                    className={`surface-glass relative cursor-pointer rounded-3xl border p-6 transition-colors duration-200 sm:p-9 ${activeStep === 2
+                        ? "border-cyan-500/45 bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-cyan-950/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16),0_25px_70px_rgba(34,211,238,0.14)]"
+                        : "border-white/10 bg-zinc-950/80 hover:border-white/20"
                         }`}
                 >
                     <div className="flex items-center justify-between">
-                        <div className="grid size-12 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300">
+                        <div className="grid size-12 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]">
                             <ShieldCheck className="size-5" />
                         </div>
-                        <span className="font-mono text-3xl font-bold tracking-tight text-zinc-700 sm:text-4xl">
+                        <span className="font-mono text-3xl font-bold tracking-tight tabular-nums text-zinc-700 sm:text-4xl">
                             02
                         </span>
                     </div>
 
-                    {/* Proof-of-Work Commit Graph Widget */}
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/55 p-4 sm:p-5">
+                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/55 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:p-5">
                         <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
                             <span className="size-2 rounded-full bg-cyan-400" />
                             GITHUB · PORTFOLIO · 99.8% SIGNAL
@@ -349,11 +369,12 @@ export default function VerificationWorkflow() {
                                 {COMMIT_BARS.map((bar, i) => (
                                     <motion.div
                                         key={i}
-                                        initial={{ scaleY: 0.4 }}
-                                        whileInView={{ scaleY: 1 }}
+                                        initial={{ scaleY: 0.4, opacity: 0.5 }}
+                                        whileInView={{ scaleY: 1, opacity: 1 }}
+                                        viewport={{ once: true }}
                                         transition={{
-                                            duration: 0.4,
-                                            delay: i * 0.04,
+                                            duration: 0.35,
+                                            delay: i * 0.035,
                                             ease: EASE_OUT,
                                         }}
                                         style={{ originY: 1 }}
@@ -363,7 +384,7 @@ export default function VerificationWorkflow() {
                             </div>
                         </div>
 
-                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-500/25 bg-cyan-950/20 px-3.5 py-2.5 font-mono text-[11px]">
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-500/25 bg-cyan-950/20 px-3.5 py-2.5 font-mono text-[11px] tabular-nums">
                             <span className="text-zinc-300">CURATOR AUDIT STATUS</span>
                             <span className="font-semibold text-emerald-300">
                                 0.0% SPAM · APPROVED
@@ -399,25 +420,25 @@ export default function VerificationWorkflow() {
                     onMouseEnter={() => setActiveStep(3)}
                     onClick={() => setActiveStep(3)}
                     animate={{
-                        scale: activeStep === 3 ? 1.01 : 1,
+                        scale: activeStep === 3 ? 1.008 : 1,
+                        y: activeStep === 3 ? -2 : 0,
                     }}
-                    transition={{ duration: 0.25, ease: EASE_OUT }}
-                    className={`relative cursor-pointer rounded-3xl border p-6 transition-colors duration-300 sm:p-9 ${activeStep === 3
-                            ? "border-emerald-500/45 bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-emerald-950/20 shadow-[0_25px_70px_rgba(16,185,129,0.15)]"
-                            : "border-white/10 bg-zinc-950/80 hover:border-white/20"
+                    transition={{ duration: 0.24, ease: EASE_OUT }}
+                    className={`surface-glass relative cursor-pointer rounded-3xl border p-6 transition-colors duration-200 sm:p-9 ${activeStep === 3
+                        ? "border-emerald-500/45 bg-gradient-to-b from-zinc-900/90 via-zinc-950 to-emerald-950/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.16),0_25px_70px_rgba(16,185,129,0.15)]"
+                        : "border-white/10 bg-zinc-950/80 hover:border-white/20"
                         }`}
                 >
                     <div className="flex items-center justify-between">
-                        <div className="grid size-12 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300">
+                        <div className="grid size-12 place-items-center rounded-2xl border border-violet-500/30 bg-violet-500/10 text-violet-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]">
                             <Globe className="size-5" />
                         </div>
-                        <span className="font-mono text-3xl font-bold tracking-tight text-zinc-700 sm:text-4xl">
+                        <span className="font-mono text-3xl font-bold tracking-tight tabular-nums text-zinc-700 sm:text-4xl">
                             03
                         </span>
                     </div>
 
-                    {/* Live Public Profile & Founder Contact Widget */}
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/55 p-4 sm:p-5">
+                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/55 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] sm:p-5">
                         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-zinc-900/80 px-4 py-3 font-mono text-xs">
                             <div className="flex items-center gap-2">
                                 <span className="size-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
@@ -429,9 +450,8 @@ export default function VerificationWorkflow() {
                                     · LIVE
                                 </span>
                             </div>
-                            <span className="text-zinc-400">
-                                <strong className="tabular-nums text-white">{liveViews}</strong>{" "}
-                                views
+                            <span className="tabular-nums text-zinc-400">
+                                <strong className="text-white">{liveViews}</strong> views
                             </span>
                         </div>
 
@@ -452,7 +472,7 @@ export default function VerificationWorkflow() {
                                     "1-Click Founder Contact copies builder email or opens direct intro!"
                                 )
                             }}
-                            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-gradient-to-r from-emerald-950/80 via-teal-900/60 to-emerald-950/80 font-mono text-xs font-semibold text-white transition-all hover:border-emerald-400/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.25)]"
+                            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-gradient-to-r from-emerald-950/80 via-teal-900/60 to-emerald-950/80 font-mono text-xs font-semibold text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] transition-all duration-200 hover:border-emerald-400/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.25)] active:scale-[0.98]"
                         >
                             <Zap className="size-3.5 text-emerald-400" /> 1-Click Founder
                             Contact
