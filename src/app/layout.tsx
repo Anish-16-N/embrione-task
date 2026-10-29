@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar"
 import CommandMenu from "@/components/CommandMenu"
 import ShortlistDrawer from "@/components/ShortlistDrawer"
 import SmoothScroll from "@/components/SmoothScroll"
-import InteractiveBackground from "@/components/InteractiveBackground"
+import TopoBackground from "@/components/TopoBackground"
 import { Toaster } from "@/components/ui/sonner"
 import { siteConfig } from "@/lib/siteConfig"
 
@@ -26,13 +26,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${inter.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased selection:bg-foreground selection:text-background`}
       >
         <SmoothScroll />
-        <InteractiveBackground />
+        <TopoBackground />
+
         <Suspense fallback={<div className="h-16" />}>
           <Navbar />
         </Suspense>
+
         <CommandMenu />
         <ShortlistDrawer />
+
         <main className="overflow-x-hidden">{children}</main>
+
         <footer className="border-t border-white/10 py-12 text-xs text-muted-foreground">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
             <p>© 2026 {siteConfig.name}. Curated Builder Directory.</p>
@@ -49,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+
         <Toaster position="bottom-right" richColors />
       </body>
     </html>
